@@ -131,6 +131,17 @@ There are many ways to run Firefly III
 8. You can [install it on Lando](https://gist.github.com/ArtisKrumins/ccb24f31d6d4872b57e7c9343a9d1bf0).
 9. You can [install it on Yunohost](https://github.com/YunoHost-Apps/firefly-iii).
 
+### Supabase integration
+
+If you use the Supabase sync endpoint (`POST /api/v1/about/supabase/sync-user`), create the expected table in your Supabase database first.
+
+Use the SQL script in `database/supabase/firefly_users.sql`.
+
+Also set these environment variables:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 ## Contributing
 
 You can contact me at [james@firefly-iii.org](mailto:james@firefly-iii.org), you may open an issue in the [main repository](https://github.com/firefly-iii/firefly-iii) or contact me through [gitter](https://gitter.im/firefly-iii/firefly-iii) and [Mastodon](https://fosstodon.org/@ff3).

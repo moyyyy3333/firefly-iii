@@ -741,6 +741,7 @@ Route::group(
     static function (): void {
         Route::get('', ['uses' => 'AboutController@about', 'as' => 'index']);
         Route::get('user', ['uses' => 'AboutController@user', 'as' => 'user']);
+        Route::post('supabase/sync-user', ['uses' => 'SupabaseController@syncUser', 'as' => 'supabase.sync-user']);
     }
 );
 // Configuration API routes
