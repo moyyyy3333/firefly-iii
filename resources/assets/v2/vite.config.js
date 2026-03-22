@@ -33,10 +33,14 @@ export default defineConfig(({command, mode, isSsrBuild, isPreview}) => {
 
     let https = null;
     if (command === 'serve') {
-        https = {
-            key: fs.readFileSync(`/vagrant/tls-certificates/wildcard.sd.internal.key`),
-            cert: fs.readFileSync(`/vagrant/tls-certificates/wildcard.sd.internal.crt`),
-        };
+        const keyPath = `/vagrant/tls-certificates/wildcard.sd.internal.key`;
+        const certPath = `/vagrant/tls-certificates/wildcard.sd.internal.crt`;
+        if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+            https = {
+                key: fs.readFileSync(keyPath),
+                cert: fs.readFileSync(certPath),
+            };
+        }
     }
 
     return {
