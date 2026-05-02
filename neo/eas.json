@@ -35,7 +35,6 @@
     "production": {
       "ios": {
         "appleId": "Dealermatt72@me.com",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
         "appleTeamId": "J3K6WPM6WK",
         "ascApiKeyPath": "./secrets/AuthKey_6B83VR88CL.p8",
         "ascApiKeyId": "6B83VR88CL",
