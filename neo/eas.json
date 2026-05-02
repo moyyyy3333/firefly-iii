@@ -34,9 +34,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "YOUR_APPLE_ID@example.com",
+        "appleId": "Dealermatt72@me.com",
         "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID",
+        "appleTeamId": "J3K6WPM6WK",
         "ascApiKeyPath": "./secrets/AuthKey_6B83VR88CL.p8",
         "ascApiKeyId": "6B83VR88CL",
         "ascApiIssuerId": "6eb532f2-c593-43cf-9ef0-e5df8d294669"
