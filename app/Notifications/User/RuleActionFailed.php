@@ -104,6 +104,14 @@ class RuleActionFailed extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(User $notifiable): string
+    {
+        return $this->message;
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(User $notifiable): array
     {
         $channels = ReturnsAvailableChannels::returnChannels('user', $notifiable);

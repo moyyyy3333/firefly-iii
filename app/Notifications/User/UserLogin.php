@@ -109,6 +109,17 @@ class UserLogin extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(User $notifiable): string
+    {
+        $ip   = Request::ip();
+        $host = Steam::getHostName($ip);
+
+        return (string) trans('email.slack_login_from_new_ip', ['ip' => $ip, 'host' => $host]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(User $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('user', $notifiable);

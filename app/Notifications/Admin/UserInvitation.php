@@ -120,6 +120,17 @@ class UserInvitation extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(OwnerNotifiable $notifiable): string
+    {
+        return (string) trans('email.invitation_created_body', [
+            'email'   => $this->invitee->user->email,
+            'invitee' => $this->invitee->email,
+        ]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(OwnerNotifiable $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('owner');

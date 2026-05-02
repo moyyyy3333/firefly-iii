@@ -116,6 +116,16 @@ class UnknownUserLoginAttempt extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(OwnerNotifiable $notifiable): string
+    {
+        $ip = Request::ip();
+
+        return (string) trans('email.unknown_user_body', ['address' => $this->address, 'ip' => $ip]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(OwnerNotifiable $notifiable): array
     {
         $channels   = ReturnsAvailableChannels::returnChannels('owner');

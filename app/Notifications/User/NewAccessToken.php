@@ -89,6 +89,14 @@ class NewAccessToken extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(User $notifiable): string
+    {
+        return (string) trans('email.access_token_created_body');
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(User $notifiable): array
     {
         $channels   = ReturnsAvailableChannels::returnChannels('user', $notifiable);

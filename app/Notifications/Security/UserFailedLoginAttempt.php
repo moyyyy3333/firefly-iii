@@ -111,6 +111,16 @@ class UserFailedLoginAttempt extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(User $notifiable): string
+    {
+        $ip = Request::ip();
+
+        return (string) trans('email.failed_login_message', ['ip' => $ip, 'email' => $this->user->email]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(User $notifiable): array
     {
         $channels   = ReturnsAvailableChannels::returnChannels('user', $notifiable);

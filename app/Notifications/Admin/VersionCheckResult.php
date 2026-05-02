@@ -104,6 +104,14 @@ class VersionCheckResult extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(OwnerNotifiable $notifiable): string
+    {
+        return $this->message;
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(OwnerNotifiable $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('owner');

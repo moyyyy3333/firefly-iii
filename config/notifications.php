@@ -28,6 +28,7 @@ return [
         'slack'    => ['enabled' => true, 'ui_configurable' => 1],
         // 'ntfy'     => ['enabled' => false, 'ui_configurable' => 1],
         'pushover' => ['enabled' => true, 'ui_configurable' => 1],
+        'telegram' => ['enabled' => true, 'ui_configurable' => 1],
         //        'gotify'     => ['enabled' => false, 'ui_configurable' => 0],
         //        'pushbullet' => ['enabled' => false, 'ui_configurable' => 0],
     ],

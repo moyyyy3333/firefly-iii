@@ -136,6 +136,7 @@ final class PreferencesController extends Controller
         $ntfyAuth                       = '1' === Preferences::get('ntfy_auth', false)->data;
         $ntfyUser                       = Preferences::getEncrypted('ntfy_user', '')->data;
         $ntfyPass                       = (string) Preferences::getEncrypted('ntfy_pass', '')->data;
+        $telegramChatId                 = (string) Preferences::getEncrypted('telegram_chat_id', '')->data;
         $channels                       = config('notifications.channels');
         $forcedAvailability             = [];
         $anonymous                      = Steam::anonymous();
@@ -156,6 +157,7 @@ final class PreferencesController extends Controller
         }
         $forcedAvailability['ntfy']     = '' !== $ntfyTopic;
         $forcedAvailability['pushover'] = '' !== $pushoverAppToken && '' !== $pushoverUserToken;
+        $forcedAvailability['telegram'] = '' !== $telegramChatId;
 
         ksort($languages);
 
@@ -185,6 +187,7 @@ final class PreferencesController extends Controller
             $ntfyAuth          = false;
             $ntfyUser          = '';
             $ntfyPass          = '';
+            $telegramChatId    = '';
         }
 
         return view('preferences.index', [
@@ -199,6 +202,7 @@ final class PreferencesController extends Controller
             'ntfyUser'           => $ntfyUser,
             'forcedAvailability' => $forcedAvailability,
             'ntfyPass'           => $ntfyPass,
+            'telegramChatId'     => $telegramChatId,
             'groupedAccounts'    => $groupedAccounts,
             'isDocker'           => $isDocker,
             'frontpageAccounts'  => $frontpageAccounts,
@@ -267,7 +271,7 @@ final class PreferencesController extends Controller
 
         // notification settings, cannot be set by the demo user.
         if (!auth()->user()->hasRole('demo')) {
-            $variables = ['slack_webhook_url', 'pushover_app_token', 'pushover_user_token', 'ntfy_server', 'ntfy_topic', 'ntfy_user', 'ntfy_pass'];
+            $variables = ['slack_webhook_url', 'pushover_app_token', 'pushover_user_token', 'ntfy_server', 'ntfy_topic', 'ntfy_user', 'ntfy_pass', 'telegram_chat_id'];
             $all       = $request->only($variables);
             foreach ($variables as $variable) {
                 if ('' === $all[$variable]) {
@@ -379,6 +383,7 @@ final class PreferencesController extends Controller
             case 'slack':
             case 'pushover':
             case 'ntfy':
+            case 'telegram':
                 /** @var User $user */
                 $user = auth()->user();
                 Log::debug(sprintf('Now in testNotification("%s") controller.', $channel));

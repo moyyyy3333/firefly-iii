@@ -107,6 +107,14 @@ class MFABackupNoLeftNotification extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(User $notifiable): string
+    {
+        return (string) trans('email.mfa_no_backups_left_slack', ['email' => $this->user->email]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(User $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('user', $notifiable);

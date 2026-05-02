@@ -30,9 +30,11 @@ use FireflyIII\Notifications\NotificationSender;
 use FireflyIII\Notifications\Test\OwnerTestNotificationEmail;
 use FireflyIII\Notifications\Test\OwnerTestNotificationPushover;
 use FireflyIII\Notifications\Test\OwnerTestNotificationSlack;
+use FireflyIII\Notifications\Test\OwnerTestNotificationTelegram;
 use FireflyIII\Notifications\Test\UserTestNotificationEmail;
 use FireflyIII\Notifications\Test\UserTestNotificationPushover;
 use FireflyIII\Notifications\Test\UserTestNotificationSlack;
+use FireflyIII\Notifications\Test\UserTestNotificationTelegram;
 use Illuminate\Support\Facades\Log;
 
 class SendsTestNotification
@@ -72,6 +74,16 @@ class SendsTestNotification
 
             case 'owner-pushover':
                 $class = OwnerTestNotificationPushover::class;
+
+                break;
+
+            case 'user-telegram':
+                $class = UserTestNotificationTelegram::class;
+
+                break;
+
+            case 'owner-telegram':
+                $class = OwnerTestNotificationTelegram::class;
 
                 break;
 

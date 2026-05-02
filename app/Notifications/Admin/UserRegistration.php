@@ -117,6 +117,14 @@ class UserRegistration extends Notification
     /**
      * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
+    public function toTelegram(OwnerNotifiable $notifiable): string
+    {
+        return (string) trans('email.admin_new_user_registered', ['email' => $this->user->email, 'id' => $this->user->id]);
+    }
+
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
     public function via(OwnerNotifiable $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('owner');
