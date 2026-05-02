@@ -67,10 +67,6 @@
         }
       ]
     ],
-    "extra": {
-      "eas": {
-        "projectId": "neo-security-guard-001"
-      }
-    }
+    "owner": "dealermatt72"
   }
 }

@@ -11,6 +11,8 @@ on:
 env:
   EXPO_TOKEN: 5zDGNIZGhouTvUjvInWLPE75TFygXQgriT6Pb0RB
   ASC_API_KEY_P8_BASE64: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR1RBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJIa3dkd0lCQVFRZ0xLeHp5QWZVQ2grMXZxaUkKbjBDWUdsT0NoM1BDbmJlZ3Rlb2FzTVB4R2ZLZ0NnWUlLb1pJemowREFRZWhSQU5DQUFSNG5wNEFpTWxHZm9adgpjWjBKYU41NDV5NHBLU1VyUDNuUHVZTk1hcllGSkpQU1NnaGlsUklhdXpBYjR2REhCeEU5T0NnTG40eXRNREtOCmd2THRYeUZSCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+  # Tells EAS not to check git working-tree state in CI
+  EAS_NO_VCS: 1
 
 jobs:
   build-and-submit:
@@ -46,8 +48,18 @@ jobs:
           eas-version: latest
           token: ${{ env.EXPO_TOKEN }}
 
-      - name: Build iOS
-        run: eas build --platform ios --profile production --non-interactive
+      - name: Create or link Expo project
+        run: |
+          # Registers 'neo-security-guard' under dealermatt72's account if it
+          # doesn't exist yet, and writes the real projectId into app.json
+          npx eas-cli@latest init --non-interactive --force || true
 
-      - name: Submit to App Store Connect
-        run: eas submit --platform ios --profile production --latest --non-interactive
+      - name: Build iOS and auto-submit to App Store Connect
+        # --auto-submit: builds the IPA then immediately submits it
+        # --non-interactive: no prompts (required for CI)
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --auto-submit
