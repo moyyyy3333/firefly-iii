@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
 
 const PATROL_LOG_KEY = 'neo_patrol_log';
 const SETTINGS_KEY = 'neo_settings';
@@ -350,11 +351,13 @@ export class SecurityService {
         body: topThreat.description,
         data: { threatId: topThreat.id },
         sound: settings.alertsSound,
-        vibrate: settings.alertsVibrate ? [0, 300, 200, 300] : [],
-        color: '#ff3344',
-        priority: 'high',
+        ...(Platform.OS === 'android' && {
+          color: '#ff3344',
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          vibrate: settings.alertsVibrate ? [0, 300, 200, 300] : [],
+        }),
       },
-      trigger: null, // immediate
+      trigger: null,
     });
   }
 }

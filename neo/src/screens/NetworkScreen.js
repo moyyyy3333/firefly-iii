@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, RefreshControl, Animated,
+  View, Text, StyleSheet, ScrollView, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +17,6 @@ export default function NetworkScreen() {
   const [history, setHistory] = useState([]);
   const [reqPerMin, setReqPerMin] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [monitoring, setMonitoring] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
