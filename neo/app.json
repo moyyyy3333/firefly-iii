@@ -17,11 +17,22 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.neo.securityguard",
       "buildNumber": "1",
+      "requireFullScreen": true,
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#050510",
+        "tabletImage": "./assets/splash.png"
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "NEO scans QR codes and barcodes to detect malicious URLs and threats.",
+        "NSMicrophoneUsageDescription": "NEO requires microphone access as part of camera permissions on iOS.",
         "NSLocalNetworkUsageDescription": "NEO monitors your local network for suspicious activity and unauthorized connections.",
         "NSLocationWhenInUseUsageDescription": "NEO uses location context to detect unusual network behavior.",
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "NSPhotoLibraryUsageDescription": "NEO may save scan results to your photo library.",
+        "NSFaceIDUsageDescription": "NEO uses Face ID to protect access to security settings.",
+        "UIBackgroundModes": ["fetch", "remote-notification"],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
