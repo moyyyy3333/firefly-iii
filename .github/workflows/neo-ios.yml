@@ -1,0 +1,65 @@
+name: NEO – iOS Build & Submit
+
+on:
+  push:
+    branches:
+      - claude/neo-installation-ready-eZJDV
+    paths:
+      - 'neo/**'
+  workflow_dispatch:
+
+env:
+  EXPO_TOKEN: 5zDGNIZGhouTvUjvInWLPE75TFygXQgriT6Pb0RB
+  ASC_API_KEY_P8_BASE64: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR1RBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJIa3dkd0lCQVFRZ0xLeHp5QWZVQ2grMXZxaUkKbjBDWUdsT0NoM1BDbmJlZ3Rlb2FzTVB4R2ZLZ0NnWUlLb1pJemowREFRZWhSQU5DQUFSNG5wNEFpTWxHZm9adgpjWjBKYU41NDV5NHBLU1VyUDNuUHVZTk1hcllGSkpQU1NnaGlsUklhdXpBYjR2REhCeEU5T0NnTG40eXRNREtOCmd2THRYeUZSCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+  # Tells EAS not to check git working-tree state in CI
+  EAS_NO_VCS: 1
+
+jobs:
+  build-and-submit:
+    name: Build & Submit to App Store
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: neo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: neo/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Restore App Store Connect API key
+        run: |
+          mkdir -p secrets
+          echo "$ASC_API_KEY_P8_BASE64" | base64 --decode > secrets/AuthKey_6B83VR88CL.p8
+          chmod 600 secrets/AuthKey_6B83VR88CL.p8
+
+      - name: Set up EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: Create or link Expo project
+        run: |
+          # Registers 'neo-security-guard' under dealermatt72's account if it
+          # doesn't exist yet, and writes the real projectId into app.json
+          npx eas-cli@latest init --non-interactive --force || true
+
+      - name: Build iOS and auto-submit to App Store Connect
+        # --auto-submit: builds the IPA then immediately submits it
+        # --non-interactive: no prompts (required for CI)
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --auto-submit

@@ -1,0 +1,45 @@
+{
+  "cli": {
+    "version": ">= 7.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "distribution": "internal"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "distribution": "store"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "Dealermatt72@me.com",
+        "appleTeamId": "J3K6WPM6WK",
+        "ascApiKeyPath": "./secrets/AuthKey_6B83VR88CL.p8",
+        "ascApiKeyId": "6B83VR88CL",
+        "ascApiIssuerId": "6eb532f2-c593-43cf-9ef0-e5df8d294669"
+      }
+    }
+  }
+}

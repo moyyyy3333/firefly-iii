@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "NEO",
+    "slug": "neo-security-guard",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#050510",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050510"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.neo.securityguard",
+      "buildNumber": "1",
+      "requireFullScreen": true,
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#050510",
+        "tabletImage": "./assets/splash.png"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "NEO scans QR codes and barcodes to detect malicious URLs and threats.",
+        "NSMicrophoneUsageDescription": "NEO requires microphone access as part of camera permissions on iOS.",
+        "NSLocalNetworkUsageDescription": "NEO monitors your local network for suspicious activity and unauthorized connections.",
+        "NSLocationWhenInUseUsageDescription": "NEO uses location context to detect unusual network behavior.",
+        "NSPhotoLibraryUsageDescription": "NEO may save scan results to your photo library.",
+        "NSFaceIDUsageDescription": "NEO uses Face ID to protect access to security settings.",
+        "UIBackgroundModes": ["fetch", "remote-notification"],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#050510"
+      },
+      "package": "com.neo.securityguard",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-camera",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0080ff",
+          "sounds": []
+        }
+      ]
+    ],
+    "owner": "dealermatt72"
+  }
+}
