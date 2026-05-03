@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.neo.securityguard",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "requireFullScreen": true,
       "splash": {
         "image": "./assets/splash.png",
