@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "NEO",
-    "slug": "neo-security-guard",
+    "slug": "neo-bot",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -67,6 +67,6 @@
         }
       ]
     ],
-    "owner": "dealermatt72"
+    "owner": "dealermatt"
   }
 }
