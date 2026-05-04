@@ -1,0 +1,48 @@
+name: Deploy Unmask
+
+on:
+  push:
+    branches: [claude/build-filter-removal-app-5uLr9]
+    paths: [filter-removal-web/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: filter-removal-web/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: filter-removal-web
+
+      - name: Build
+        run: npm run build
+        working-directory: filter-removal-web
+        env:
+          VITE_BASE: /firefly-iii/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: filter-removal-web/dist
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
