@@ -119,8 +119,16 @@ function buildFaceMask(H, W, { x1, y1, x2, y2 }) {
 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      const inX = Math.min(1, Math.max(0, (x - fx1) / featherX, (fx2 - x) / featherX));
-      const inY = Math.min(1, Math.max(0, (y - fy1) / featherY, (fy2 - y) / featherY));
+      // Trapezoidal feather: ramp up from left/top edge, ramp down toward right/bottom.
+      // MIN of both ramps gives 0 outside, a slope at edges, 1 in the interior.
+      const inX = Math.min(
+        Math.min(1, Math.max(0, (x - fx1) / Math.max(featherX, 1))),
+        Math.min(1, Math.max(0, (fx2 - x) / Math.max(featherX, 1)))
+      );
+      const inY = Math.min(
+        Math.min(1, Math.max(0, (y - fy1) / Math.max(featherY, 1))),
+        Math.min(1, Math.max(0, (fy2 - y) / Math.max(featherY, 1)))
+      );
       data[y * W + x] = inX * inY;
     }
   }
@@ -146,7 +154,9 @@ function unsharpMask(tensor, amount) {
   kernelTensor.dispose();
   channels.forEach((c) => c.dispose());
 
-  return tf.concat(sharpened, 2);
+  const result = tf.concat(sharpened, 2);
+  sharpened.forEach((t) => t.dispose());
+  return result;
 }
 
 // Stretch each channel to [0, 255] at p2/p98 to remove color casts.
@@ -168,7 +178,10 @@ async function channelStretch(tensor) {
     return out;
   });
 
-  return tf.concat(stretched, 2);
+  const result = tf.concat(stretched, 2);
+  // concat copies data into a new tensor; dispose the channel slices
+  stretched.forEach((t) => t.dispose());
+  return result;
 }
 
 // Gamma correction toward 0.5 midpoint to undo over-brightening.

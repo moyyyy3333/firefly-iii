@@ -102,9 +102,16 @@ export default function App() {
     setStepIndex(0);
     try {
       setStepIndex(0);
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+
+      // Resize to max 768px before TF.js to avoid OOM on large phone photos.
+      // Original URI is kept for display; only the resized copy goes to inference.
+      const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
+      const resized = await manipulateAsync(
+        uri,
+        [{ resize: { width: 768 } }],
+        { format: SaveFormat.JPEG, base64: true, compress: 0.92 }
+      );
+      const base64 = resized.base64;
 
       setStepIndex(1); // Detecting face…
       // Small pause so the label is visible before the heavy inference starts
