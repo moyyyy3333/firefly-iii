@@ -1,0 +1,3 @@
+[submodule "neurolink"]
+	path = neurolink
+	url = https://github.com/moyyyy3333/neurolink.git
