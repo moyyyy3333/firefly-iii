@@ -1,1 +1,3 @@
-filter-removal-web/node_modules/
+node_modules/
+dist/
+.env
