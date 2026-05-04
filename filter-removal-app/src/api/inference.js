@@ -21,6 +21,13 @@ async function ensureBlazeFace() {
   return blazefaceModel;
 }
 
+// Call this on app mount to download BlazeFace in the background
+// so the first real image doesn't stall waiting for the model.
+export async function warmupModels() {
+  await ensureTF();
+  await ensureBlazeFace();
+}
+
 /**
  * On-device filter removal pipeline. No API key or internet needed.
  * strength: 0.5 = mild, 1.0 = normal, 1.5 = aggressive

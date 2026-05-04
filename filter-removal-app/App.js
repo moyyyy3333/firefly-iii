@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, Alert, ActivityIndicator, Dimensions, SafeAreaView,
@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { restoreImage } from './src/api/inference';
+import { restoreImage, warmupModels } from './src/api/inference';
 import ComparisonSlider from './src/components/ComparisonSlider';
 import ForensicsPanel from './src/components/ForensicsPanel';
 
@@ -33,6 +33,13 @@ export default function App() {
   const [forensics, setForensics] = useState(null);
   const [saved, setSaved] = useState(false);
   const [strength, setStrength] = useState(1.0);
+  const [modelReady, setModelReady] = useState(false);
+
+  useEffect(() => {
+    warmupModels()
+      .then(() => setModelReady(true))
+      .catch(() => setModelReady(true)); // non-fatal; inference has its own fallback
+  }, []);
 
   const startProcessing = (uri) => {
     setOriginalUri(uri);
@@ -140,7 +147,9 @@ export default function App() {
         {/* Nav */}
         <View style={styles.nav}>
           <Text style={styles.logo}>Unmask</Text>
-          <Text style={styles.tagline}>AI Filter Removal</Text>
+          <Text style={styles.tagline}>
+            {modelReady ? 'AI Filter Removal' : 'Loading AI models…'}
+          </Text>
         </View>
 
         {/* Hero — shown until first image is picked */}
@@ -272,30 +281,47 @@ export default function App() {
   );
 }
 
+// Use TF.js to decode images and extract real pixel data (RGB → RGBA).
+// This avoids atob (unavailable in RN) and the PNG-bytes-as-pixels bug.
 async function computeForensicsFromFiles(origUri, restUri) {
   try {
     const { computeForensics } = await import('./src/utils/forensics');
+    const tf = await import('@tensorflow/tfjs');
+    const { decodeJpeg } = await import('@tensorflow/tfjs-react-native');
     const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
 
+    // Resize both to 200px so forensics runs fast
     const [origResult, restResult] = await Promise.all([
-      manipulateAsync(origUri, [{ resize: { width: 200 } }], { format: SaveFormat.PNG, base64: true }),
-      manipulateAsync(restUri, [{ resize: { width: 200 } }], { format: SaveFormat.PNG, base64: true }),
+      manipulateAsync(origUri, [{ resize: { width: 200 } }], { format: SaveFormat.JPEG, base64: true, compress: 0.9 }),
+      manipulateAsync(restUri, [{ resize: { width: 200 } }], { format: SaveFormat.JPEG, base64: true, compress: 0.9 }),
     ]);
 
-    const origBytes = decodeBase64ToUint8(origResult.base64);
-    const restBytes = decodeBase64ToUint8(restResult.base64);
+    const toPixels = (b64, w, h) => {
+      const raw = tf.util.encodeString(b64, 'base64');
+      const tensor = decodeJpeg(raw); // [H, W, 3] uint8
+      const rgb = tensor.dataSync();  // Uint8Array, 3 bytes per pixel
+      tensor.dispose();
 
-    return computeForensics(origBytes, restBytes, origResult.width, origResult.height);
+      // forensics.js expects RGBA (4 bytes/pixel)
+      const rgba = new Uint8ClampedArray(w * h * 4);
+      for (let i = 0; i < w * h; i++) {
+        rgba[i * 4]     = rgb[i * 3];
+        rgba[i * 4 + 1] = rgb[i * 3 + 1];
+        rgba[i * 4 + 2] = rgb[i * 3 + 2];
+        rgba[i * 4 + 3] = 255;
+      }
+      return rgba;
+    };
+
+    const w = origResult.width;
+    const h = origResult.height;
+    const origPixels = toPixels(origResult.base64, w, h);
+    const restPixels = toPixels(restResult.base64, w, h);
+
+    return computeForensics(origPixels, restPixels, w, h);
   } catch {
     return heuristicForensics();
   }
-}
-
-function decodeBase64ToUint8(b64) {
-  const binary = atob(b64);
-  const bytes = new Uint8ClampedArray(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }
 
 function heuristicForensics() {
