@@ -39,7 +39,11 @@ async function tensorToDataUrl(tensor) {
   const canvas = document.createElement('canvas')
   canvas.width = tensor.shape[1]
   canvas.height = tensor.shape[0]
-  const uint8 = tensor.clipByValue(0, 255).cast('int32')
+  const clipped = tensor.clipByValue(0, 255)
+  const safe = tf.where(tf.isNaN(clipped), tf.zerosLike(clipped), clipped)
+  clipped.dispose()
+  const uint8 = safe.cast('int32')
+  safe.dispose()
   await tf.browser.toPixels(uint8, canvas)
   uint8.dispose()
   return canvas.toDataURL('image/jpeg', 0.92)
@@ -159,7 +163,9 @@ function channelStretch(tensor) {
 }
 
 function adaptiveContrast(tensor) {
-  const normalized = tensor.div(255)
+  const clamped = tensor.clipByValue(0, 255)
+  const normalized = clamped.div(255)
+  clamped.dispose()
   const mean = normalized.mean().dataSync()[0]
   const gamma = Math.min(2.0, Math.max(0.5, Math.log(0.5) / Math.log(Math.max(0.01, mean))))
   const out = normalized.pow(gamma).mul(255)
