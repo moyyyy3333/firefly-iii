@@ -9,10 +9,6 @@ import { restoreImage } from './src/api/inference';
 import ComparisonSlider from './src/components/ComparisonSlider';
 import ForensicsPanel from './src/components/ForensicsPanel';
 
-// Set your Replicate API token here or via a config/env file.
-// Get one free at https://replicate.com
-const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN ?? '';
-
 const SCREEN_W = Dimensions.get('window').width;
 
 export default function App() {
@@ -45,14 +41,6 @@ export default function App() {
   };
 
   const processImage = async (uri) => {
-    if (!REPLICATE_API_TOKEN) {
-      Alert.alert(
-        'API Token Required',
-        'Add your Replicate API token to App.js (REPLICATE_API_TOKEN). Get one free at replicate.com.'
-      );
-      return;
-    }
-
     setIsProcessing(true);
     try {
       setStage('Reading image…');
@@ -60,21 +48,17 @@ export default function App() {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      setStage('Running AI restoration…');
-      const outputUrl = await restoreImage(base64, REPLICATE_API_TOKEN);
+      setStage('Removing filters…');
+      const restoredLocalUri = await restoreImage(base64);
 
-      setStage('Downloading result…');
-      const localUri = `${FileSystem.cacheDirectory}restored_${Date.now()}.jpg`;
-      await FileSystem.downloadAsync(outputUrl, localUri);
-
-      setRestoredUri(localUri);
+      setRestoredUri(restoredLocalUri);
 
       setStage('Computing forensics…');
-      const metrics = await computeForensicsFromFiles(uri, localUri);
+      const metrics = await computeForensicsFromFiles(uri, restoredLocalUri);
       setForensics(metrics);
     } catch (err) {
       console.error(err);
-      Alert.alert('Processing failed', err.message ?? 'Unknown error. Check your API token and internet connection.');
+      Alert.alert('Processing failed', err.message ?? 'Unknown error.');
     } finally {
       setIsProcessing(false);
       setStage('');
@@ -97,7 +81,7 @@ export default function App() {
               See what's <Text style={styles.accent}>actually</Text> there
             </Text>
             <Text style={styles.subtitle}>
-              Real AI restoration using GFPGAN • Forensic-grade analysis
+              On-device filter removal • No internet required • Forensic analysis
             </Text>
 
             <View style={styles.featureList}>
@@ -117,7 +101,7 @@ export default function App() {
             </TouchableOpacity>
 
             <Text style={styles.disclaimer}>
-              Photos are sent to Replicate's API for inference. Not stored.
+              All processing runs on-device. Photos never leave your phone.
             </Text>
           </View>
         )}
@@ -198,10 +182,10 @@ function heuristicForensics() {
 }
 
 const FEATURES = [
-  { icon: '🧠', label: 'GFPGAN Restoration', desc: 'State-of-the-art face detail recovery' },
-  { icon: '🔬', label: 'ELA Forensics', desc: 'Error-level analysis detects smoothing' },
-  { icon: '🎨', label: 'Color Cast Detection', desc: 'Identifies warm/cool filter overlays' },
-  { icon: '📐', label: 'Face Geometry Check', desc: 'Detects face-slimming distortion' },
+  { icon: '🔪', label: 'Unsharp Masking', desc: 'Recovers texture erased by smoothing filters' },
+  { icon: '🎨', label: 'Color Cast Removal', desc: 'Stretches per-channel histograms to natural range' },
+  { icon: '🌗', label: 'Adaptive Contrast', desc: 'Restores midtone balance from over-brightening' },
+  { icon: '🔬', label: 'Forensic Analysis', desc: 'ELA + SSIM scoring of what was removed' },
 ];
 
 const styles = StyleSheet.create({
