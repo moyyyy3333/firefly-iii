@@ -74,4 +74,15 @@ class OwnerNotifiable
 
         return (string) $res;
     }
+
+    public function routeNotificationForTelegram(): string
+    {
+        Log::debug('Return settings for routeNotificationForTelegram');
+        $res = FireflyConfig::getEncrypted('telegram_chat_id', '')->data;
+        if (is_array($res)) {
+            $res = '';
+        }
+
+        return (string) $res;
+    }
 }

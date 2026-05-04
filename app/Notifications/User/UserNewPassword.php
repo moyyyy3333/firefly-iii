@@ -101,6 +101,14 @@ class UserNewPassword extends Notification
         return new SlackMessage()->content((string) trans('email.reset_pw_message'));
     }
 
+    /**
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+     */
+    public function toTelegram(User $notifiable): string
+    {
+        return (string) trans('email.reset_pw_message');
+    }
+
     public function via(User $notifiable): array
     {
         return ReturnsAvailableChannels::returnChannels('user', $notifiable);

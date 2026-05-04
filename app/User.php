@@ -379,6 +379,35 @@ class User extends Authenticatable
     }
 
     /**
+     * Route notifications for the Telegram channel.
+     */
+    public function routeNotificationForTelegram(Notification $notification): ?string
+    {
+        $res = FireflyConfig::getEncrypted('telegram_chat_id', '')->data;
+        if (is_array($res)) {
+            $res = '';
+        }
+        $res = (string) $res;
+
+        if (property_exists($notification, 'type') && 'owner' === $notification->type) {
+            return $res;
+        }
+
+        if ($notification instanceof UserRegistration) {
+            return $res;
+        }
+        if ($notification instanceof VersionCheckResult) {
+            return $res;
+        }
+        $pref = Preferences::getEncryptedForUser($this, 'telegram_chat_id', '')->data;
+        if (is_array($pref)) {
+            return '';
+        }
+
+        return (string) $pref;
+    }
+
+    /**
      * Link to rule groups.
      */
     public function ruleGroups(): HasMany

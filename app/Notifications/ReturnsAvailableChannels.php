@@ -83,6 +83,19 @@ class ReturnsAvailableChannels
             }
         }
 
+        // telegram
+        if (true === config('notifications.channels.telegram.enabled', false)) {
+            $telegramBotToken = (string) FireflyConfig::getEncrypted('telegram_bot_token', '')->data;
+            $telegramChatId   = (string) FireflyConfig::getEncrypted('telegram_chat_id', '')->data;
+            if ('' === $telegramBotToken || '' === $telegramChatId) {
+                Log::warning('[Telegram] No Telegram token or chat ID, channel is disabled.');
+            }
+            if ('' !== $telegramBotToken && '' !== $telegramChatId) {
+                Log::debug('Enabled telegram.');
+                $channels[] = 'telegram';
+            }
+        }
+
         Log::debug(sprintf('Final channel set in ReturnsAvailableChannels: %s ', implode(', ', $channels)));
 
         return $channels;
@@ -122,6 +135,19 @@ class ReturnsAvailableChannels
             if ('' !== $pushoverAppToken && '' !== $pushoverUserToken) {
                 Log::debug('Enabled pushover.');
                 $channels[] = PushoverChannel::class;
+            }
+        }
+
+        // telegram
+        if (true === config('notifications.channels.telegram.enabled', false)) {
+            $telegramBotToken = (string) FireflyConfig::getEncrypted('telegram_bot_token', '')->data;
+            $telegramChatId   = (string) Preferences::getEncryptedForUser($user, 'telegram_chat_id', '')->data;
+            if ('' === $telegramBotToken || '' === $telegramChatId) {
+                Log::warning('[Telegram] No Telegram token or chat ID, channel is disabled.');
+            }
+            if ('' !== $telegramBotToken && '' !== $telegramChatId) {
+                Log::debug('Enabled telegram.');
+                $channels[] = 'telegram';
             }
         }
 
