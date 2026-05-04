@@ -21,7 +21,6 @@
     "@tensorflow/tfjs-react-native": "^0.8.0",
     "@tensorflow-models/blazeface": "^0.1.0",
     "@react-native-async-storage/async-storage": "1.21.0",
-    "react-native-fs": "^2.20.0",
     "jpeg-js": "^0.4.4"
   },
   "devDependencies": {
