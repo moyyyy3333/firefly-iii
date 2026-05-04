@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Unmask",
+    "slug": "unmask-filter-removal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0a0a0f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.unmask.filterremoval",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Unmask needs photo access to analyze and restore your images.",
+        "NSCameraUsageDescription": "Unmask uses the camera so you can take a photo to analyze directly."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0f"
+      },
+      "package": "com.unmask.filterremoval",
+      "permissions": ["READ_EXTERNAL_STORAGE", "CAMERA", "WRITE_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Unmask needs access to your photos to analyze and remove filters.",
+          "cameraPermission": "Unmask uses the camera so you can take a photo to analyze directly."
+        }
+      ]
+    ]
+  }
+}
