@@ -4,6 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, Dimensions, SafeAreaView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
 import { restoreImage } from './src/api/inference';
 import ComparisonSlider from './src/components/ComparisonSlider';
@@ -17,6 +18,7 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [stage, setStage] = useState('');
   const [forensics, setForensics] = useState(null);
+  const [saved, setSaved] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -36,7 +38,22 @@ export default function App() {
       setOriginalUri(uri);
       setRestoredUri(null);
       setForensics(null);
+      setSaved(false);
       processImage(uri);
+    }
+  };
+
+  const saveImage = async () => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to save.');
+      return;
+    }
+    try {
+      await MediaLibrary.saveToLibraryAsync(restoredUri);
+      setSaved(true);
+    } catch (err) {
+      Alert.alert('Save failed', err.message);
     }
   };
 
@@ -121,9 +138,14 @@ export default function App() {
             <ComparisonSlider originalUri={originalUri} restoredUri={restoredUri} />
             <ForensicsPanel forensics={forensics} />
 
-            <TouchableOpacity style={styles.retryBtn} onPress={pickImage} activeOpacity={0.8}>
-              <Text style={styles.retryText}>Try Another Photo</Text>
-            </TouchableOpacity>
+            <View style={styles.actions}>
+              <TouchableOpacity style={styles.saveBtn} onPress={saveImage} activeOpacity={0.85}>
+                <Text style={styles.saveText}>{saved ? 'Saved!' : 'Save to Camera Roll'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.retryBtn} onPress={pickImage} activeOpacity={0.8}>
+                <Text style={styles.retryText}>Try Another Photo</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
 
@@ -251,9 +273,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  actions: { marginHorizontal: 24, marginTop: 16, gap: 10 },
+  saveBtn: {
+    backgroundColor: '#00ff88',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  saveText: { color: '#0a0a0f', fontWeight: '800', fontSize: 15 },
   retryBtn: {
-    marginHorizontal: 24,
-    marginTop: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
     borderRadius: 14,

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Image, PanResponder, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, PanResponder, StyleSheet, Dimensions } from 'react-native';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -49,7 +49,10 @@ export default function ComparisonSlider({ originalUri, restoredUri }) {
 
       {/* Labels */}
       <View style={styles.labelLeft} pointerEvents="none">
-        <View style={styles.labelBg}><Image source={require('../assets/label-before.png')} style={styles.labelIcon} /></View>
+        <View style={styles.labelBg}><Text style={styles.labelText}>BEFORE</Text></View>
+      </View>
+      <View style={styles.labelRight} pointerEvents="none">
+        <View style={styles.labelBg}><Text style={styles.labelText}>AFTER</Text></View>
       </View>
     </View>
   );
@@ -107,16 +110,13 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     transform: [{ rotate: '45deg' }],
   },
-  labelLeft: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-  },
+  labelLeft: { position: 'absolute', top: 12, left: 12 },
+  labelRight: { position: 'absolute', top: 12, right: 12 },
   labelBg: {
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  labelIcon: { width: 60, height: 14, tintColor: '#fff' },
+  labelText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
 });
