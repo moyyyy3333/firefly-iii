@@ -4,6 +4,7 @@ import { decodeJpeg, encodeJpeg } from '@tensorflow/tfjs-react-native';
 import * as FileSystem from 'expo-file-system';
 
 let tfReady = false;
+let blazefaceModel = null;
 
 async function ensureTF() {
   if (!tfReady) {
@@ -12,28 +13,29 @@ async function ensureTF() {
   }
 }
 
+async function ensureBlazeFace() {
+  if (!blazefaceModel) {
+    const blazeface = require('@tensorflow-models/blazeface');
+    blazefaceModel = await blazeface.load();
+  }
+  return blazefaceModel;
+}
+
 /**
  * On-device filter removal pipeline. No API key or internet needed.
- *
- * Steps:
- *   1. Decode JPEG → float32 tensor [H, W, 3]
- *   2. Unsharp mask  — recovers texture erased by beauty-filter Gaussian blur
- *   3. Channel stretch — removes per-channel color casts (warm/cool filters)
- *   4. Adaptive contrast — restores natural luminance range
- *   5. Encode → JPEG → local file URI
+ * strength: 0.5 = mild, 1.0 = normal, 1.5 = aggressive
  */
-export async function restoreImage(base64Input) {
+export async function restoreImage(base64Input, strength = 1.0) {
   await ensureTF();
 
-  // Decode outside tidy so we can manage tensor lifetimes manually
   const raw = tf.util.encodeString(base64Input, 'base64');
   const imageTensor = decodeJpeg(raw).toFloat(); // [H, W, 3], range 0–255
 
   try {
-    const unsharpened = unsharpMask(imageTensor, 0.7);
+    // Face-aware unsharp: strong inside face region, mild outside
+    const unsharpened = await faceAwareUnsharp(imageTensor, strength);
     imageTensor.dispose();
 
-    // channelStretch calls dataSync, must run outside tidy
     const stretched = await channelStretch(unsharpened);
     unsharpened.dispose();
 
@@ -53,6 +55,79 @@ export async function restoreImage(base64Input) {
   }
 }
 
+// Runs BlazeFace; if a face is found, blends strong sharpening inside
+// the face region with mild sharpening outside.
+async function faceAwareUnsharp(tensor, strength) {
+  const [H, W] = [tensor.shape[0], tensor.shape[1]];
+
+  let faceBbox = null;
+  try {
+    const model = await ensureBlazeFace();
+    // BlazeFace expects int32 [H,W,3]
+    const uint8 = tensor.cast('int32');
+    const preds = await model.estimateFaces(uint8, false);
+    uint8.dispose();
+
+    if (preds.length > 0) {
+      faceBbox = {
+        x1: preds[0].topLeft[0],
+        y1: preds[0].topLeft[1],
+        x2: preds[0].bottomRight[0],
+        y2: preds[0].bottomRight[1],
+      };
+    }
+  } catch {
+    // If BlazeFace fails (e.g. no face or model error), fall back gracefully
+  }
+
+  if (!faceBbox) {
+    return unsharpMask(tensor, 0.7 * strength);
+  }
+
+  // Two passes: aggressive for face, gentle for background
+  const faceSharp = unsharpMask(tensor, 1.3 * strength);
+  const bgSharp = unsharpMask(tensor, 0.25 * strength);
+
+  // Soft mask: 1 inside face bbox (with 10% padding), 0 outside
+  const mask = buildFaceMask(H, W, faceBbox);
+  const maskBroad = mask.expandDims(2); // [H, W, 1] → broadcast over channels
+
+  const result = faceSharp.mul(maskBroad).add(bgSharp.mul(tf.scalar(1).sub(maskBroad)));
+
+  faceSharp.dispose();
+  bgSharp.dispose();
+  mask.dispose();
+  maskBroad.dispose();
+
+  return result;
+}
+
+// Creates a [H, W] float32 mask: 1 inside padded face bbox, 0 outside.
+// Edges are feathered over ~5% of the face width for a natural blend.
+function buildFaceMask(H, W, { x1, y1, x2, y2 }) {
+  const padX = (x2 - x1) * 0.12;
+  const padY = (y2 - y1) * 0.12;
+  const featherX = (x2 - x1) * 0.05;
+  const featherY = (y2 - y1) * 0.05;
+
+  const fx1 = Math.max(0, x1 - padX);
+  const fy1 = Math.max(0, y1 - padY);
+  const fx2 = Math.min(W - 1, x2 + padX);
+  const fy2 = Math.min(H - 1, y2 + padY);
+
+  const data = new Float32Array(H * W);
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const inX = Math.min(1, Math.max(0, (x - fx1) / featherX, (fx2 - x) / featherX));
+      const inY = Math.min(1, Math.max(0, (y - fy1) / featherY, (fy2 - y) / featherY));
+      data[y * W + x] = inX * inY;
+    }
+  }
+
+  return tf.tensor2d(data, [H, W]);
+}
+
 // Unsharp mask: sharpened = original + amount * (original - blurred)
 function unsharpMask(tensor, amount) {
   const kernel = gaussianKernel5x5(2.0);
@@ -60,9 +135,12 @@ function unsharpMask(tensor, amount) {
 
   const channels = tf.split(tensor, 3, 2);
   const sharpened = channels.map((ch) => {
-    const expanded = ch.expandDims(0); // [1, H, W, 1]
+    const expanded = ch.expandDims(0);
     const blurred = tf.conv2d(expanded, kernelTensor, 1, 'same').squeeze([0]);
-    return ch.add(ch.sub(blurred).mul(amount));
+    const out = ch.add(ch.sub(blurred).mul(amount));
+    expanded.dispose();
+    blurred.dispose();
+    return out;
   });
 
   kernelTensor.dispose();
@@ -71,13 +149,13 @@ function unsharpMask(tensor, amount) {
   return tf.concat(sharpened, 2);
 }
 
-// Stretch each channel to [0, 255] based on its 2nd/98th percentile.
+// Stretch each channel to [0, 255] at p2/p98 to remove color casts.
 async function channelStretch(tensor) {
   const channels = tf.split(tensor, 3, 2);
   const stretched = channels.map((ch) => {
     const flat = ch.flatten();
     const n = flat.shape[0];
-    const vals = flat.dataSync(); // synchronous read for percentile math
+    const vals = flat.dataSync();
     flat.dispose();
 
     const sorted = Float32Array.from(vals).sort();
@@ -104,7 +182,6 @@ function adaptiveContrast(tensor) {
   return out;
 }
 
-// Precomputed 5×5 Gaussian kernel weights (normalized).
 function gaussianKernel5x5(sigma) {
   const size = 5;
   const center = Math.floor(size / 2);
@@ -124,7 +201,7 @@ function gaussianKernel5x5(sigma) {
 }
 
 async function encodeAndSave(tensor) {
-  const jpegBytes = await encodeJpeg(tensor); // single arg — no quality param in tfjs-rn
+  const jpegBytes = await encodeJpeg(tensor);
   const b64 = tf.util.decodeString(jpegBytes, 'base64');
   const uri = `${FileSystem.cacheDirectory}restored_${Date.now()}.jpg`;
   await FileSystem.writeAsStringAsync(uri, b64, {

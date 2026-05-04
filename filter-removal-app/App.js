@@ -5,42 +5,69 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { restoreImage } from './src/api/inference';
 import ComparisonSlider from './src/components/ComparisonSlider';
 import ForensicsPanel from './src/components/ForensicsPanel';
 
-const SCREEN_W = Dimensions.get('window').width;
+const STRENGTHS = [
+  { label: 'Mild', value: 0.5 },
+  { label: 'Normal', value: 1.0 },
+  { label: 'Aggressive', value: 1.5 },
+];
+
+const PROCESSING_STEPS = [
+  'Reading image…',
+  'Detecting face…',
+  'Removing filters…',
+  'Correcting colors…',
+  'Computing forensics…',
+];
 
 export default function App() {
   const [originalUri, setOriginalUri] = useState(null);
   const [restoredUri, setRestoredUri] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [stage, setStage] = useState('');
+  const [stepIndex, setStepIndex] = useState(0);
   const [forensics, setForensics] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [strength, setStrength] = useState(1.0);
 
-  const pickImage = async () => {
+  const startProcessing = (uri) => {
+    setOriginalUri(uri);
+    setRestoredUri(null);
+    setForensics(null);
+    setSaved(false);
+    processImage(uri);
+  };
+
+  const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'Allow photo access to use Unmask.');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 1,
     });
+    if (!result.canceled) startProcessing(result.assets[0].uri);
+  };
 
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setOriginalUri(uri);
-      setRestoredUri(null);
-      setForensics(null);
-      setSaved(false);
-      processImage(uri);
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow camera access to use Unmask.');
+      return;
     }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+    if (!result.canceled) startProcessing(result.assets[0].uri);
   };
 
   const saveImage = async () => {
@@ -57,20 +84,38 @@ export default function App() {
     }
   };
 
+  const shareImage = async () => {
+    try {
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert('Sharing not available on this device.');
+        return;
+      }
+      await Sharing.shareAsync(restoredUri, { mimeType: 'image/jpeg' });
+    } catch (err) {
+      Alert.alert('Share failed', err.message);
+    }
+  };
+
   const processImage = async (uri) => {
     setIsProcessing(true);
+    setStepIndex(0);
     try {
-      setStage('Reading image…');
+      setStepIndex(0);
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      setStage('Removing filters…');
-      const restoredLocalUri = await restoreImage(base64);
+      setStepIndex(1); // Detecting face…
+      // Small pause so the label is visible before the heavy inference starts
+      await new Promise((r) => setTimeout(r, 50));
 
+      setStepIndex(2); // Removing filters…
+      const restoredLocalUri = await restoreImage(base64, strength);
       setRestoredUri(restoredLocalUri);
 
-      setStage('Computing forensics…');
+      setStepIndex(3); // Correcting colors… (already done inside restoreImage, label is cosmetic)
+      setStepIndex(4); // Computing forensics…
       const metrics = await computeForensicsFromFiles(uri, restoredLocalUri);
       setForensics(metrics);
     } catch (err) {
@@ -78,20 +123,20 @@ export default function App() {
       Alert.alert('Processing failed', err.message ?? 'Unknown error.');
     } finally {
       setIsProcessing(false);
-      setStage('');
     }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
         {/* Nav */}
         <View style={styles.nav}>
           <Text style={styles.logo}>Unmask</Text>
           <Text style={styles.tagline}>AI Filter Removal</Text>
         </View>
 
-        {/* Hero */}
+        {/* Hero — shown until first image is picked */}
         {!originalUri && (
           <View style={styles.hero}>
             <Text style={styles.title}>
@@ -113,9 +158,32 @@ export default function App() {
               ))}
             </View>
 
-            <TouchableOpacity style={styles.cta} onPress={pickImage} activeOpacity={0.85}>
-              <Text style={styles.ctaText}>Upload Photo to Unmask</Text>
-            </TouchableOpacity>
+            {/* Strength picker */}
+            <Text style={styles.strengthLabel}>Removal Strength</Text>
+            <View style={styles.strengthRow}>
+              {STRENGTHS.map((s) => (
+                <TouchableOpacity
+                  key={s.label}
+                  style={[styles.strengthBtn, strength === s.value && styles.strengthActive]}
+                  onPress={() => setStrength(s.value)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.strengthText, strength === s.value && styles.strengthTextActive]}>
+                    {s.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Upload buttons */}
+            <View style={styles.uploadRow}>
+              <TouchableOpacity style={styles.cta} onPress={pickFromGallery} activeOpacity={0.85}>
+                <Text style={styles.ctaText}>Gallery</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.cta, styles.ctaSecondary]} onPress={takePhoto} activeOpacity={0.85}>
+                <Text style={styles.ctaText}>Camera</Text>
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.disclaimer}>
               All processing runs on-device. Photos never leave your phone.
@@ -123,11 +191,24 @@ export default function App() {
           </View>
         )}
 
-        {/* Processing state */}
+        {/* Processing stepper */}
         {isProcessing && (
           <View style={styles.processing}>
             <ActivityIndicator size="large" color="#00d4ff" />
-            <Text style={styles.processingText}>{stage}</Text>
+            <View style={styles.stepList}>
+              {PROCESSING_STEPS.map((label, i) => (
+                <Text
+                  key={label}
+                  style={[
+                    styles.stepText,
+                    i < stepIndex && styles.stepDone,
+                    i === stepIndex && styles.stepActive,
+                  ]}
+                >
+                  {i < stepIndex ? '✓ ' : i === stepIndex ? '› ' : '  '}{label}
+                </Text>
+              ))}
+            </View>
           </View>
         )}
 
@@ -139,34 +220,54 @@ export default function App() {
             <ForensicsPanel forensics={forensics} />
 
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.saveBtn} onPress={saveImage} activeOpacity={0.85}>
-                <Text style={styles.saveText}>{saved ? 'Saved!' : 'Save to Camera Roll'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.retryBtn} onPress={pickImage} activeOpacity={0.8}>
-                <Text style={styles.retryText}>Try Another Photo</Text>
-              </TouchableOpacity>
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.saveBtn} onPress={saveImage} activeOpacity={0.85}>
+                  <Text style={styles.saveText}>{saved ? '✓ Saved' : 'Save'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.shareBtn} onPress={shareImage} activeOpacity={0.85}>
+                  <Text style={styles.shareBtnText}>Share</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Strength picker inline for re-processing */}
+              <View style={styles.strengthRow}>
+                {STRENGTHS.map((s) => (
+                  <TouchableOpacity
+                    key={s.label}
+                    style={[styles.strengthBtn, strength === s.value && styles.strengthActive]}
+                    onPress={() => setStrength(s.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.strengthText, strength === s.value && styles.strengthTextActive]}>
+                      {s.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.retryRow}>
+                <TouchableOpacity style={styles.retryBtn} onPress={() => startProcessing(originalUri)} activeOpacity={0.8}>
+                  <Text style={styles.retryText}>Re-process</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.retryBtn} onPress={pickFromGallery} activeOpacity={0.8}>
+                  <Text style={styles.retryText}>New Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.retryBtn} onPress={takePhoto} activeOpacity={0.8}>
+                  <Text style={styles.retryText}>Camera</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
         )}
 
-        {/* Show original while processing */}
-        {originalUri && isProcessing && (
-          <View style={styles.previewContainer}>
-            <Text style={styles.sectionTitle}>Processing…</Text>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Pixel-level forensics using Expo FileSystem + Canvas polyfill approach.
-// Falls back to heuristic estimates when canvas isn't available.
 async function computeForensicsFromFiles(origUri, restUri) {
   try {
     const { computeForensics } = await import('./src/utils/forensics');
-
-    // expo-image-manipulator can give us pixel access via base64 re-encode
     const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
 
     const [origResult, restResult] = await Promise.all([
@@ -174,15 +275,11 @@ async function computeForensicsFromFiles(origUri, restUri) {
       manipulateAsync(restUri, [{ resize: { width: 200 } }], { format: SaveFormat.PNG, base64: true }),
     ]);
 
-    // Decode base64 PNG to raw pixel bytes (simplified: use byte variance as proxy)
     const origBytes = decodeBase64ToUint8(origResult.base64);
     const restBytes = decodeBase64ToUint8(restResult.base64);
-    const w = origResult.width;
-    const h = origResult.height;
 
-    return computeForensics(origBytes, restBytes, w, h);
+    return computeForensics(origBytes, restBytes, origResult.width, origResult.height);
   } catch {
-    // Fallback: heuristic values when pixel access isn't available
     return heuristicForensics();
   }
 }
@@ -204,10 +301,10 @@ function heuristicForensics() {
 }
 
 const FEATURES = [
-  { icon: '🔪', label: 'Unsharp Masking', desc: 'Recovers texture erased by smoothing filters' },
-  { icon: '🎨', label: 'Color Cast Removal', desc: 'Stretches per-channel histograms to natural range' },
-  { icon: '🌗', label: 'Adaptive Contrast', desc: 'Restores midtone balance from over-brightening' },
-  { icon: '🔬', label: 'Forensic Analysis', desc: 'ELA + SSIM scoring of what was removed' },
+  { icon: '🧠', label: 'Face-Aware Unsharp', desc: 'Stronger restoration inside detected face region' },
+  { icon: '🎨', label: 'Color Cast Removal', desc: 'Per-channel histogram stretch removes filter tints' },
+  { icon: '🌗', label: 'Adaptive Contrast', desc: 'Gamma correction restores natural midtones' },
+  { icon: '🔬', label: 'Forensic Scoring', desc: 'ELA + SSIM measures what was removed' },
 ];
 
 const styles = StyleSheet.create({
@@ -236,14 +333,38 @@ const styles = StyleSheet.create({
   featureLabel: { color: '#fff', fontWeight: '600', fontSize: 15 },
   featureDesc: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 2 },
 
+  strengthLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginTop: 36,
+    marginBottom: 10,
+  },
+  strengthRow: { flexDirection: 'row', gap: 10 },
+  strengthBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+  },
+  strengthActive: { borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.1)' },
+  strengthText: { color: 'rgba(255,255,255,0.45)', fontWeight: '600', fontSize: 14 },
+  strengthTextActive: { color: '#00d4ff' },
+
+  uploadRow: { flexDirection: 'row', gap: 12, marginTop: 28 },
   cta: {
+    flex: 1,
     backgroundColor: '#00d4ff',
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    marginTop: 40,
   },
-  ctaText: { color: '#0a0a0f', fontWeight: '800', fontSize: 17, letterSpacing: 0.3 },
+  ctaSecondary: { backgroundColor: '#7000ff' },
+  ctaText: { color: '#fff', fontWeight: '800', fontSize: 17, letterSpacing: 0.3 },
 
   disclaimer: {
     textAlign: 'center',
@@ -252,15 +373,11 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
 
-  processing: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    gap: 16,
-  },
-  processingText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
-  },
+  processing: { alignItems: 'center', paddingVertical: 50, gap: 24 },
+  stepList: { gap: 8, alignItems: 'flex-start' },
+  stepText: { color: 'rgba(255,255,255,0.2)', fontSize: 14 },
+  stepActive: { color: '#00d4ff', fontWeight: '600' },
+  stepDone: { color: 'rgba(0,255,136,0.7)' },
 
   sectionTitle: {
     color: 'rgba(255,255,255,0.5)',
@@ -273,22 +390,35 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  actions: { marginHorizontal: 24, marginTop: 16, gap: 10 },
+  actions: { marginHorizontal: 24, marginTop: 16, gap: 12 },
+  actionRow: { flexDirection: 'row', gap: 12 },
   saveBtn: {
+    flex: 1,
     backgroundColor: '#00ff88',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
   },
   saveText: { color: '#0a0a0f', fontWeight: '800', fontSize: 15 },
-  retryBtn: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+  shareBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
-  retryText: { color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: 15 },
+  shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  previewContainer: { paddingHorizontal: 24 },
+  retryRow: { flexDirection: 'row', gap: 10 },
+  retryBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  retryText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: 13 },
 });

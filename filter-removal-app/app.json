@@ -13,7 +13,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.unmask.filterremoval",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Unmask needs photo access to analyze and restore your images."
+        "NSPhotoLibraryUsageDescription": "Unmask needs photo access to analyze and restore your images.",
+        "NSCameraUsageDescription": "Unmask uses the camera so you can take a photo to analyze directly."
       }
     },
     "android": {
@@ -21,13 +22,14 @@
         "backgroundColor": "#0a0a0f"
       },
       "package": "com.unmask.filterremoval",
-      "permissions": ["READ_EXTERNAL_STORAGE"]
+      "permissions": ["READ_EXTERNAL_STORAGE", "CAMERA", "WRITE_EXTERNAL_STORAGE"]
     },
     "plugins": [
       [
         "expo-image-picker",
         {
-          "photosPermission": "Unmask needs access to your photos to analyze and remove filters."
+          "photosPermission": "Unmask needs access to your photos to analyze and remove filters.",
+          "cameraPermission": "Unmask uses the camera so you can take a photo to analyze directly."
         }
       ]
     ]
