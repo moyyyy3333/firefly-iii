@@ -13,7 +13,7 @@ async function ensureTF() {
 }
 
 /**
- * Full client-side filter removal pipeline. No API key needed.
+ * On-device filter removal pipeline. No API key or internet needed.
  *
  * Steps:
  *   1. Decode JPEG → float32 tensor [H, W, 3]
@@ -22,79 +22,93 @@ async function ensureTF() {
  *   4. Adaptive contrast — restores natural luminance range
  *   5. Encode → JPEG → local file URI
  */
-export async function restoreImage(base64Input, _ignoredToken) {
+export async function restoreImage(base64Input) {
   await ensureTF();
 
-  return tf.tidy(() => {
-    // --- Decode ---
-    const raw = tf.util.encodeString(base64Input, 'base64');
-    const imageTensor = decodeJpeg(raw).toFloat(); // [H, W, 3], range 0–255
+  // Decode outside tidy so we can manage tensor lifetimes manually
+  const raw = tf.util.encodeString(base64Input, 'base64');
+  const imageTensor = decodeJpeg(raw).toFloat(); // [H, W, 3], range 0–255
 
-    // --- 1. Unsharp mask (sigma≈2, amount=0.7) ---
+  try {
     const unsharpened = unsharpMask(imageTensor, 0.7);
+    imageTensor.dispose();
 
-    // --- 2. Per-channel stretch (remove color cast) ---
-    const stretched = channelStretch(unsharpened);
+    // channelStretch calls dataSync, must run outside tidy
+    const stretched = await channelStretch(unsharpened);
+    unsharpened.dispose();
 
-    // --- 3. Adaptive contrast (gamma correction toward 0.5 midpoint) ---
     const contrasted = adaptiveContrast(stretched);
+    stretched.dispose();
 
-    // Clamp and cast back to uint8
     const output = contrasted.clipByValue(0, 255).cast('int32');
+    contrasted.dispose();
 
-    return encodeAndSave(output);
-  });
+    const uri = await encodeAndSave(output);
+    output.dispose();
+
+    return uri;
+  } catch (err) {
+    imageTensor.dispose();
+    throw err;
+  }
 }
 
 // Unsharp mask: sharpened = original + amount * (original - blurred)
 function unsharpMask(tensor, amount) {
-  // 5×5 Gaussian kernel, sigma≈2
-  const sigma = 2.0;
-  const kernel = gaussianKernel5x5(sigma);
+  const kernel = gaussianKernel5x5(2.0);
   const kernelTensor = tf.tensor4d(kernel, [5, 5, 1, 1]);
 
-  // Process each channel independently
-  const channels = tf.split(tensor, 3, 2); // [H, W, 1] x3
+  const channels = tf.split(tensor, 3, 2);
   const sharpened = channels.map((ch) => {
     const expanded = ch.expandDims(0); // [1, H, W, 1]
     const blurred = tf.conv2d(expanded, kernelTensor, 1, 'same').squeeze([0]);
     return ch.add(ch.sub(blurred).mul(amount));
   });
 
-  return tf.concat(sharpened, 2); // [H, W, 3]
+  kernelTensor.dispose();
+  channels.forEach((c) => c.dispose());
+
+  return tf.concat(sharpened, 2);
 }
 
-// Stretch each channel to [0, 255] based on its 2nd and 98th percentile.
-function channelStretch(tensor) {
+// Stretch each channel to [0, 255] based on its 2nd/98th percentile.
+async function channelStretch(tensor) {
   const channels = tf.split(tensor, 3, 2);
   const stretched = channels.map((ch) => {
     const flat = ch.flatten();
-    const sorted = flat.gather(tf.argsort(flat));
-    const n = sorted.shape[0];
-    const lo = sorted.gather([Math.floor(n * 0.02)]).dataSync()[0];
-    const hi = sorted.gather([Math.floor(n * 0.98)]).dataSync()[0];
+    const n = flat.shape[0];
+    const vals = flat.dataSync(); // synchronous read for percentile math
+    flat.dispose();
+
+    const sorted = Float32Array.from(vals).sort();
+    const lo = sorted[Math.floor(n * 0.02)];
+    const hi = sorted[Math.floor(n * 0.98)];
+
     if (hi <= lo) return ch;
-    return ch.sub(lo).div(hi - lo).mul(255);
+    const out = ch.sub(lo).div(hi - lo).mul(255);
+    ch.dispose();
+    return out;
   });
+
   return tf.concat(stretched, 2);
 }
 
-// Mild gamma correction: push midtones toward 128 (undo over-brightening).
+// Gamma correction toward 0.5 midpoint to undo over-brightening.
 function adaptiveContrast(tensor) {
   const normalized = tensor.div(255);
   const mean = normalized.mean().dataSync()[0];
-  // If image is too bright (mean > 0.6), darken slightly, and vice versa
-  const targetMean = 0.5;
-  const gamma = Math.log(targetMean) / Math.log(Math.max(0.01, mean));
-  const clamped = gamma < 0.5 ? 0.5 : gamma > 2.0 ? 2.0 : gamma;
-  return normalized.pow(clamped).mul(255);
+  const gamma = Math.log(0.5) / Math.log(Math.max(0.01, mean));
+  const clamped = Math.min(2.0, Math.max(0.5, gamma));
+  const out = normalized.pow(clamped).mul(255);
+  normalized.dispose();
+  return out;
 }
 
 // Precomputed 5×5 Gaussian kernel weights (normalized).
 function gaussianKernel5x5(sigma) {
   const size = 5;
   const center = Math.floor(size / 2);
-  let weights = [];
+  const weights = [];
   let sum = 0;
 
   for (let y = 0; y < size; y++) {
@@ -110,7 +124,7 @@ function gaussianKernel5x5(sigma) {
 }
 
 async function encodeAndSave(tensor) {
-  const jpegBytes = await encodeJpeg(tensor, 92);
+  const jpegBytes = await encodeJpeg(tensor); // single arg — no quality param in tfjs-rn
   const b64 = tf.util.decodeString(jpegBytes, 'base64');
   const uri = `${FileSystem.cacheDirectory}restored_${Date.now()}.jpg`;
   await FileSystem.writeAsStringAsync(uri, b64, {
