@@ -163,11 +163,16 @@ function channelStretch(tensor) {
 }
 
 function adaptiveContrast(tensor) {
-  const clamped = tensor.clipByValue(0, 255)
+  // Replace NaN before mean() — a single NaN pixel poisons the whole mean
+  const noNan = tf.where(tf.isNaN(tensor), tf.zerosLike(tensor), tensor)
+  const clamped = noNan.clipByValue(0, 255)
+  noNan.dispose()
   const normalized = clamped.div(255)
   clamped.dispose()
-  const mean = normalized.mean().dataSync()[0]
-  const gamma = Math.min(2.0, Math.max(0.5, Math.log(0.5) / Math.log(Math.max(0.01, mean))))
+  const rawMean = normalized.mean().dataSync()[0]
+  const mean = isNaN(rawMean) ? 0.5 : rawMean
+  const rawGamma = Math.log(0.5) / Math.log(Math.max(0.01, mean))
+  const gamma = isFinite(rawGamma) ? Math.min(2.0, Math.max(0.5, rawGamma)) : 1.0
   const out = normalized.pow(gamma).mul(255)
   normalized.dispose()
   return out
