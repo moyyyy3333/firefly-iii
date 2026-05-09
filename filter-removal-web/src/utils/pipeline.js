@@ -36,16 +36,21 @@ function loadImageToCanvas(url) {
 }
 
 async function tensorToDataUrl(tensor) {
+  const H = tensor.shape[0], W = tensor.shape[1]
   const canvas = document.createElement('canvas')
-  canvas.width = tensor.shape[1]
-  canvas.height = tensor.shape[0]
-  const clipped = tensor.clipByValue(0, 255)
-  const safe = tf.where(tf.isNaN(clipped), tf.zerosLike(clipped), clipped)
-  clipped.dispose()
-  const uint8 = safe.cast('int32')
-  safe.dispose()
-  await tf.browser.toPixels(uint8, canvas)
-  uint8.dispose()
+  canvas.width = W
+  canvas.height = H
+  // Pull raw floats to CPU and sanitize in JS — bypasses tf.browser.toPixels
+  // validation entirely, which breaks on iOS Safari with NaN values.
+  const data = tensor.dataSync()
+  const rgba = new Uint8ClampedArray(H * W * 4)
+  for (let i = 0, j = 0; i < data.length; i += 3, j += 4) {
+    rgba[j]   = isFinite(data[i])   ? data[i]   : 0
+    rgba[j+1] = isFinite(data[i+1]) ? data[i+1] : 0
+    rgba[j+2] = isFinite(data[i+2]) ? data[i+2] : 0
+    rgba[j+3] = 255
+  }
+  canvas.getContext('2d').putImageData(new ImageData(rgba, W, H), 0, 0)
   return canvas.toDataURL('image/jpeg', 0.92)
 }
 
