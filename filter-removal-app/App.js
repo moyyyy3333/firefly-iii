@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView,
+  View, Text, TouchableOpacity, ScrollView, TextInput,
   StyleSheet, Alert, ActivityIndicator, Dimensions, SafeAreaView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { restoreImage, warmupModels } from './src/api/inference';
+import { fetchPostImageUri } from './src/api/apify';
 import ComparisonSlider from './src/components/ComparisonSlider';
 import ForensicsPanel from './src/components/ForensicsPanel';
 
@@ -34,12 +36,37 @@ export default function App() {
   const [saved, setSaved] = useState(false);
   const [strength, setStrength] = useState(1.0);
   const [modelReady, setModelReady] = useState(false);
+  const [postUrl, setPostUrl] = useState('');
+  const [apifyToken, setApifyToken] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apifyLoading, setApifyLoading] = useState(false);
 
   useEffect(() => {
     warmupModels()
       .then(() => setModelReady(true))
       .catch(() => setModelReady(true)); // non-fatal; inference has its own fallback
+    AsyncStorage.getItem('unmask_apify_token').then(v => { if (v) setApifyToken(v); });
   }, []);
+
+  const saveApifyToken = (v) => {
+    setApifyToken(v);
+    AsyncStorage.setItem('unmask_apify_token', v);
+  };
+
+  const fetchFromApify = async () => {
+    const trimmed = postUrl.trim();
+    if (!trimmed) return;
+    if (!apifyToken) { setShowApiKey(true); Alert.alert('Apify key needed', 'Enter your Apify API token first.'); return; }
+    setApifyLoading(true);
+    try {
+      const uri = await fetchPostImageUri(trimmed, apifyToken);
+      startProcessing(uri);
+    } catch (err) {
+      Alert.alert('Apify fetch failed', err.message);
+    } finally {
+      setApifyLoading(false);
+    }
+  };
 
   const startProcessing = (uri) => {
     setOriginalUri(uri);
@@ -201,8 +228,54 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
+            {/* Apify URL fetcher */}
+            <View style={styles.apifySection}>
+              <Text style={styles.apifyLabel}>Or fetch from social media via Apify</Text>
+              <View style={styles.apifyRow}>
+                <TextInput
+                  style={styles.apifyInput}
+                  placeholder="instagram.com/p/… · tiktok.com/@…"
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={postUrl}
+                  onChangeText={setPostUrl}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+                <TouchableOpacity
+                  style={[styles.apifyBtn, apifyLoading && styles.apifyBtnDisabled]}
+                  onPress={fetchFromApify}
+                  disabled={apifyLoading}
+                  activeOpacity={0.8}
+                >
+                  {apifyLoading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.apifyBtnText}>Fetch</Text>}
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity onPress={() => setShowApiKey(v => !v)} activeOpacity={0.7}>
+                <Text style={styles.apifyKeyToggle}>
+                  {apifyToken ? (showApiKey ? 'Hide Apify key' : 'Apify key saved ✓') : 'Set Apify API key'}
+                </Text>
+              </TouchableOpacity>
+              {showApiKey && (
+                <TextInput
+                  style={[styles.apifyInput, { marginTop: 8, fontSize: 12 }]}
+                  placeholder="apify_api_xxxxxxxxxxxxxxxx"
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={apifyToken}
+                  onChangeText={saveApifyToken}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              )}
+              <Text style={styles.apifyNote}>Powered by Apify · image is fetched via Apify servers</Text>
+            </View>
+
             <Text style={styles.disclaimer}>
-              All processing runs on-device. Photos never leave your phone.
+              On-device processing is private. Apify URL fetch sends data to Apify servers.
             </Text>
           </View>
         )}
@@ -454,4 +527,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retryText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600', fontSize: 13 },
+
+  apifySection: {
+    marginTop: 32,
+    paddingTop: 28,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  apifyLabel: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  apifyRow: { flexDirection: 'row', gap: 8 },
+  apifyInput: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    color: '#fff',
+    fontSize: 14,
+  },
+  apifyBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#7000ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 68,
+  },
+  apifyBtnDisabled: { opacity: 0.5 },
+  apifyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  apifyKeyToggle: { color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 8 },
+  apifyNote: { color: 'rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 },
 });

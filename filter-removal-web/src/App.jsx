@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { restoreImage, warmup, computeForensics } from './utils/pipeline'
 import ComparisonSlider from './components/ComparisonSlider'
 import ForensicsPanel from './components/ForensicsPanel'
+import UrlFetcher from './components/UrlFetcher'
 
 const STRENGTHS = [{ label: 'Mild', v: 0.5 }, { label: 'Normal', v: 1.0 }, { label: 'Aggressive', v: 1.5 }]
 const STEPS = ['Reading image…', 'Detecting face…', 'Removing filters…', 'Correcting colors…', 'Computing forensics…']
@@ -33,6 +34,15 @@ export default function App() {
     setSaved(false)
     setError(null)
     process(url)
+  }
+
+  const handleObjectUrl = (objectUrl) => {
+    setOriginalUrl(objectUrl)
+    setRestoredUrl(null)
+    setForensics(null)
+    setSaved(false)
+    setError(null)
+    process(objectUrl)
   }
 
   const process = async (url) => {
@@ -137,7 +147,9 @@ export default function App() {
               <button style={{ ...s.ctaBtn, background: '#7000ff' }} onClick={() => cameraInputRef.current.click()}>Camera</button>
             </div>
 
-            <p style={s.disclaimer}>All processing runs in your browser. Nothing is uploaded.</p>
+            <UrlFetcher onObjectUrl={handleObjectUrl} />
+
+            <p style={s.disclaimer}>On-device processing is private. Apify URL fetch sends data to Apify servers.</p>
           </div>
         )}
 
