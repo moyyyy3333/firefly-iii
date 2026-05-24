@@ -2,7 +2,7 @@ name: Deploy Unmask
 
 on:
   push:
-    branches: [claude/build-filter-removal-app-5uLr9]
+    branches: [main]
     paths: [filter-removal-web/**]
   workflow_dispatch:
 
