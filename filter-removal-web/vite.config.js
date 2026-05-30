@@ -6,3 +6,4 @@ export default defineConfig({
   plugins: [react()],
   build: { assetsInlineLimit: 100000000 },
 })
+
