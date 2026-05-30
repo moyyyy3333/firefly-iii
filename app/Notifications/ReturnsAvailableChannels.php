@@ -126,7 +126,7 @@ class ReturnsAvailableChannels
         //        }
 
         // pushover
-        if (true === config('notifications.channels.slack.enabled', false)) {
+        if (true === config('notifications.channels.pushover.enabled', false)) {
             $pushoverAppToken  = (string) Preferences::getEncryptedForUser($user, 'pushover_app_token', '')->data;
             $pushoverUserToken = (string) Preferences::getEncryptedForUser($user, 'pushover_user_token', '')->data;
             if ('' === $pushoverAppToken || '' === $pushoverUserToken) {
