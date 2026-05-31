@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🪽 Hermes Vault</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  header {
+    padding: 14px 24px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 18px; font-weight: 600; color: #c9d1d9; }
+  header h1 span { color: #a371f7; }
+
+  nav { display: flex; gap: 4px; }
+  nav button {
+    background: none;
+    border: 1px solid transparent;
+    color: #8b949e;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  nav button:hover { background: #21262d; color: #c9d1d9; }
+  nav button.active { background: #21262d; border-color: #30363d; color: #e6edf3; }
+
+  .badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    background: #388bfd26;
+    color: #79c0ff;
+  }
+
+  /* ── Panels ─────────────────────────────────────── */
+  .panel { display: none; flex: 1; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  /* ── Graph Panel ─────────────────────────────────── */
+  #panel-graph {
+    position: relative;
+    flex-direction: column;
+  }
+
+  #graph-svg {
+    flex: 1;
+    background: radial-gradient(ellipse at center, #161b22 0%, #0d1117 100%);
+  }
+
+  .node circle {
+    stroke-width: 2.5px;
+    cursor: pointer;
+    transition: r 0.2s;
+  }
+  .node:hover circle { stroke-width: 4px; }
+  .node text {
+    fill: #e6edf3;
+    font-size: 11px;
+    text-anchor: middle;
+    pointer-events: none;
+    dominant-baseline: central;
+  }
+
+  .link {
+    stroke: #30363d;
+    stroke-width: 1.5px;
+    stroke-opacity: 0.6;
+    fill: none;
+  }
+  .link.highlighted { stroke-opacity: 1; stroke-width: 2.5px; }
+
+  /* tooltip */
+  #tooltip {
+    position: absolute;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 220px;
+    z-index: 10;
+  }
+  #tooltip strong { display: block; margin-bottom: 4px; color: #e6edf3; font-size: 13px; }
+  #tooltip span { color: #8b949e; line-height: 1.5; }
+
+  /* legend */
+  #legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: #161b22cc;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    backdrop-filter: blur(4px);
+  }
+  #legend h3 { font-size: 11px; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: #c9d1d9; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* graph controls */
+  #graph-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #graph-controls button {
+    background: #161b22;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  #graph-controls button:hover { background: #21262d; color: #e6edf3; }
+
+  /* ── Canvas Panels ───────────────────────────────── */
+  .canvas-panel {
+    flex-direction: column;
+    overflow: hidden;
+    background: #0d1117;
+  }
+
+  .canvas-wrapper {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+  }
+
+  .canvas-board {
+    position: relative;
+    min-width: 1400px;
+    min-height: 800px;
+    padding: 60px;
+  }
+
+  .c-node {
+    position: absolute;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: default;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .c-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 10;
+  }
+  .c-node h2 { font-size: 15px; margin-bottom: 6px; }
+  .c-node h3 { font-size: 13px; margin-bottom: 4px; }
+  .c-node ul { padding-left: 16px; }
+  .c-node li { margin-bottom: 2px; color: #c9d1d9; font-size: 12px; }
+  .c-node code { background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+  .c-node p { color: #8b949e; font-size: 12px; }
+
+  /* color variants */
+  .c-purple { background: #1a1033; border-color: #7c3aed55; }
+  .c-purple h2, .c-purple h3 { color: #a78bfa; }
+  .c-orange { background: #1f1208; border-color: #ea580c55; }
+  .c-orange h2, .c-orange h3 { color: #fb923c; }
+  .c-green { background: #0a1f14; border-color: #16a34a55; }
+  .c-green h2, .c-green h3 { color: #4ade80; }
+  .c-blue { background: #0a1628; border-color: #2563eb55; }
+  .c-blue h2, .c-blue h3 { color: #60a5fa; }
+  .c-yellow { background: #1a1700; border-color: #ca8a0455; }
+  .c-yellow h2, .c-yellow h3 { color: #fbbf24; }
+  .c-red { background: #1a0a0a; border-color: #dc262655; }
+  .c-red h2, .c-red h3 { color: #f87171; }
+  .c-teal { background: #071a1a; border-color: #0d948855; }
+  .c-teal h2, .c-teal h3 { color: #2dd4bf; }
+  .c-default { background: #161b22; border-color: #30363d; }
+  .c-default h2, .c-default h3 { color: #e6edf3; }
+
+  /* SVG edges overlay */
+  .canvas-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .canvas-edge {
+    stroke: #30363d;
+    stroke-width: 1.5;
+    fill: none;
+    marker-end: url(#arrowhead);
+  }
+  .canvas-edge-label {
+    fill: #8b949e;
+    font-size: 10px;
+  }
+
+  /* ── Dashboard Panel ─────────────────────────────── */
+  #panel-dash {
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 32px;
+  }
+
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+  }
+
+  .dash-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .dash-card h3 { font-size: 14px; margin-bottom: 12px; color: #e6edf3; }
+  .dash-card p { font-size: 13px; color: #8b949e; line-height: 1.6; }
+  .dash-card ul { list-style: none; }
+  .dash-card li { padding: 5px 0; border-bottom: 1px solid #21262d; font-size: 13px; color: #c9d1d9; display: flex; align-items: center; gap: 8px; }
+  .dash-card li:last-child { border-bottom: none; }
+  .dash-card code { background: #0d1117; border: 1px solid #30363d; padding: 10px 14px; border-radius: 6px; display: block; font-size: 12px; color: #79c0ff; margin: 6px 0; white-space: pre; overflow-x: auto; }
+  .dash-card .cmd-group { margin-bottom: 12px; }
+  .dash-card .cmd-label { font-size: 11px; color: #8b949e; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .page-title { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #e6edf3; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🪽 <span>Hermes</span> Vault</h1>
+  <nav>
+    <button class="active" onclick="showPanel('graph')">Graph View <span class="badge">live</span></button>
+    <button onclick="showPanel('ai-map')">AI Connections</button>
+    <button onclick="showPanel('life-map')">Life Overview</button>
+    <button onclick="showPanel('arch')">How It Works</button>
+    <button onclick="showPanel('dash')">Commands</button>
+  </nav>
+</header>
+
+<!-- ── GRAPH PANEL ─────────────────────────────────── -->
+<div id="panel-graph" class="panel active">
+  <svg id="graph-svg"></svg>
+  <div id="tooltip"><strong></strong><span></span></div>
+  <div id="graph-controls">
+    <button onclick="zoomIn()" title="Zoom in">+</button>
+    <button onclick="zoomOut()" title="Zoom out">−</button>
+    <button onclick="resetZoom()" title="Reset">⊙</button>
+  </div>
+  <div id="legend">
+    <h3>Node types</h3>
+    <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Dashboard</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div>Claude</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div>ChatGPT</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>Gemini</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div>Hermes (Local)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Synthesis</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Projects</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2dd4bf"></div>Life</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>Knowledge</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div>Canvas</div>
+  </div>
+</div>
+
+<!-- ── AI CONNECTIONS MAP ──────────────────────────── -->
+<div id="panel-ai-map" class="panel canvas-panel">
+  <div class="canvas-wrapper">
+    <div class="canvas-board" id="board-ai" style="min-width:1600px;min-height:900px;">
+      <svg class="canvas-svg" id="svg-ai">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#30363d"/>
+          </marker>
+        </defs>
+      </svg>
+
+      <!-- Labels -->
+      <div class="c-node c-purple" style="left:80px;top:30px;width:200px;">
+        <h3>🤖 Your 4 AIs</h3>
+        <p>Click any to explore</p>
+      </div>
+      <div class="c-node c-purple" style="left:1080px;top:30px;width:200px;">
+        <h3>📚 Your Vault</h3>
+        <p>Organized knowledge</p>
+      </div>
+
+      <!-- AIs — left column -->
+      <div class="c-node c-orange" id="cn-claude" style="left:60px;top:130px;width:220px;height:130px;">
+        <h2>Claude</h2>
+        <p>Anthropic · Deep reasoning<br>Code · Long context · Writing</p>
+      </div>
+      <div class="c-node c-green" id="cn-gpt" style="left:60px;top:280px;width:220px;height:130px;">
+        <h2>ChatGPT</h2>
+        <p>OpenAI · Browsing · DALL-E<br>Plugins · Code interpreter</p>
+      </div>
+      <div class="c-node c-blue" id="cn-gemini" style="left:60px;top:430px;width:220px;height:130px;">
+        <h2>Gemini</h2>
+        <p>Google · Multimodal<br>Search grounding · Docs</p>
+      </div>
+      <div class="c-node c-purple" id="cn-hermes" style="left:60px;top:580px;width:220px;height:130px;">
+        <h2>Hermes (Local)</h2>
+        <p>Nous Research · Offline<br>100% private · Free</p>
+      </div>
+
+      <!-- HERMES CENTER -->
+      <div class="c-node c-purple" id="cn-center" style="left:560px;top:260px;width:280px;height:210px;border-width:2px;">
+        <h2 style="font-size:20px;text-align:center;">🪽 HERMES</h2>
+        <p style="text-align:center;margin-bottom:10px;">AI Synthesis Hub</p>
+        <ul style="padding:0;list-style:none;">
+          <li style="border:none;padding:2px 0;font-size:12px;">⚡ All your AIs unified</li>
+          <li style="border:none;padding:2px 0;font-size:12px;">💾 Auto-saves to vault</li>
+          <li style="border:none;padding:2px 0;font-size:12px;">🔀 Compare any question</li>
+        </ul>
+        <code style="display:block;margin-top:8px;font-size:10px;background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;">node index.js chat ...</code>
+      </div>
+
+      <!-- Vault — right column -->
+      <div class="c-node c-yellow" id="cn-ideas" style="left:1060px;top:130px;width:220px;height:130px;">
+        <h2>💡 AI Ideas</h2>
+        <p>All raw ideas from every AI<br>→ <code>01 - AI Ideas/</code></p>
+      </div>
+      <div class="c-node c-yellow" id="cn-synth" style="left:1060px;top:280px;width:220px;height:130px;">
+        <h2>✨ Synthesized</h2>
+        <p>Insights distilled across AIs<br>→ <code>Synthesized/</code></p>
+      </div>
+      <div class="c-node c-red" id="cn-proj" style="left:1060px;top:430px;width:220px;height:130px;">
+        <h2>🏗 Projects</h2>
+        <p>Ideas become real work<br>→ <code>02 - Projects/</code></p>
+      </div>
+      <div class="c-node c-teal" id="cn-know" style="left:1060px;top:580px;width:220px;height:130px;">
+        <h2>🧠 Knowledge</h2>
+        <p>Concepts, research, MOCs<br>→ <code>04 - Knowledge/</code></p>
+      </div>
+
+      <!-- Life (below center) -->
+      <div class="c-node c-teal" id="cn-life" style="left:560px;top:520px;width:280px;height:110px;">
+        <h2>🌱 Life Dashboard</h2>
+        <p>Goals · Habits · Daily Notes</p>
+      </div>
+
+      <!-- Home (above center) -->
+      <div class="c-node c-purple" id="cn-home" style="left:560px;top:130px;width:280px;height:110px;">
+        <h2>🏠 Home</h2>
+        <p>Main dashboard — everything linked</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIFE OVERVIEW ────────────────────────────────── -->
+<div id="panel-life-map" class="panel canvas-panel">
+  <div class="canvas-wrapper">
+    <div class="canvas-board" id="board-life" style="min-width:1400px;min-height:800px;">
+      <svg class="canvas-svg" id="svg-life">
+        <defs>
+          <marker id="arrowhead2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#30363d"/>
+          </marker>
+        </defs>
+      </svg>
+
+      <!-- Center: You -->
+      <div class="c-node c-purple" id="lc-you" style="left:570px;top:310px;width:260px;height:180px;border-width:2px;">
+        <h2 style="font-size:22px;text-align:center;">🧭 YOU</h2>
+        <p style="text-align:center;margin-top:8px;">Every area of your life,<br>connected and visible.<br><br>Click any area to explore.</p>
+      </div>
+
+      <!-- Top -->
+      <div class="c-node c-red" id="lc-work" style="left:530px;top:80px;width:260px;height:170px;">
+        <h2>💼 Work / Career</h2>
+        <ul>
+          <li>Current role goals</li>
+          <li>Skills to build</li>
+          <li>Opportunities</li>
+          <li>Side projects</li>
+        </ul>
+      </div>
+
+      <!-- Top left -->
+      <div class="c-node c-green" id="lc-health" style="left:160px;top:120px;width:220px;height:170px;">
+        <h2>🏋 Health</h2>
+        <ul>
+          <li>Exercise routine</li>
+          <li>Sleep quality</li>
+          <li>Nutrition</li>
+          <li>Mental health</li>
+        </ul>
+      </div>
+
+      <!-- Top right -->
+      <div class="c-node c-blue" id="lc-learning" style="left:920px;top:120px;width:220px;height:170px;">
+        <h2>🧠 Learning</h2>
+        <ul>
+          <li>AI / tech skills</li>
+          <li>Books & courses</li>
+          <li>Deep practice</li>
+          <li>Experiments</li>
+        </ul>
+      </div>
+
+      <!-- Left -->
+      <div class="c-node c-purple" id="lc-ai" style="left:60px;top:330px;width:220px;height:180px;">
+        <h2>🤖 AI Projects</h2>
+        <ul>
+          <li>Claude ideas</li>
+          <li>GPT sessions</li>
+          <li>Gemini insights</li>
+          <li>Local experiments</li>
+        </ul>
+      </div>
+
+      <!-- Right -->
+      <div class="c-node c-red" id="lc-goals" style="left:1060px;top:330px;width:220px;height:180px;">
+        <h2>🎯 Goals</h2>
+        <ul>
+          <li>2026 goals</li>
+          <li>90-day targets</li>
+          <li>Weekly wins</li>
+          <li>Track progress</li>
+        </ul>
+      </div>
+
+      <!-- Bottom left -->
+      <div class="c-node c-orange" id="lc-creative" style="left:160px;top:560px;width:220px;height:170px;">
+        <h2>🎨 Creative</h2>
+        <ul>
+          <li>Projects & making</li>
+          <li>Expression</li>
+          <li>Ideas worth keeping</li>
+          <li>Fun experiments</li>
+        </ul>
+      </div>
+
+      <!-- Bottom right -->
+      <div class="c-node c-yellow" id="lc-finance" style="left:920px;top:560px;width:220px;height:170px;">
+        <h2>💸 Finance</h2>
+        <ul>
+          <li>Budget tracking</li>
+          <li>Savings goals</li>
+          <li>Investments</li>
+          <li>Income streams</li>
+        </ul>
+      </div>
+
+      <!-- Bottom -->
+      <div class="c-node c-teal" id="lc-people" style="left:530px;top:560px;width:260px;height:170px;">
+        <h2>👥 Relationships</h2>
+        <ul>
+          <li>Family & friends</li>
+          <li>Professional network</li>
+          <li>Community</li>
+          <li>Who matters most</li>
+        </ul>
+      </div>
+
+      <!-- Daily at bottom center -->
+      <div class="c-node c-default" id="lc-daily" style="left:530px;top:790px;width:260px;height:100px;">
+        <h3>📅 Daily Practice</h3>
+        <p>Morning intention → Focus → Evening review</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ARCHITECTURE ─────────────────────────────────── -->
+<div id="panel-arch" class="panel canvas-panel">
+  <div class="canvas-wrapper">
+    <div class="canvas-board" style="min-width:1400px;min-height:600px;display:flex;align-items:center;gap:0;">
+
+      <div style="display:flex;align-items:center;gap:0;padding:40px 60px;width:100%;">
+        <!-- Step 1 -->
+        <div class="c-node c-purple" style="position:static;width:160px;min-height:180px;text-align:center;">
+          <h2 style="font-size:28px;">👤</h2>
+          <h3>You</h3>
+          <p>Type a prompt<br>or paste a conversation</p>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#7c3aed,#2563eb);position:relative;">
+          <div style="position:absolute;right:-8px;top:-5px;color:#60a5fa;font-size:14px;">▶</div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="c-node c-blue" style="position:static;width:180px;min-height:180px;text-align:center;">
+          <h2>💻</h2>
+          <h3>Hermes CLI</h3>
+          <code style="font-size:10px;text-align:left;display:block;">node index.js
+chat
+compare
+import
+brief
+search</code>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#2563eb,#16a34a);position:relative;">
+          <div style="position:absolute;right:-8px;top:-5px;color:#4ade80;font-size:14px;">▶</div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="c-node c-orange" style="position:static;width:150px;min-height:80px;">
+            <h3>Claude API</h3>
+            <p>Anthropic</p>
+          </div>
+          <div class="c-node c-green" style="position:static;width:150px;min-height:80px;">
+            <h3>OpenAI API</h3>
+            <p>GPT-4o</p>
+          </div>
+          <div class="c-node c-blue" style="position:static;width:150px;min-height:80px;">
+            <h3>Gemini API</h3>
+            <p>Google</p>
+          </div>
+          <div class="c-node c-purple" style="position:static;width:150px;min-height:80px;">
+            <h3>Ollama Local</h3>
+            <p>Hermes model</p>
+          </div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#16a34a,#ca8a04);position:relative;">
+          <div style="position:absolute;right:-8px;top:-5px;color:#fbbf24;font-size:14px;">▶</div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="c-node c-yellow" style="position:static;width:180px;min-height:180px;text-align:center;">
+          <h2>📝</h2>
+          <h3>Formatter</h3>
+          <p>Adds frontmatter<br>Extracts ideas<br>Creates links<br>Formats Markdown</p>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#ca8a04,#dc2626);position:relative;">
+          <div style="position:absolute;right:-8px;top:-5px;color:#f87171;font-size:14px;">▶</div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="c-node c-red" style="position:static;width:180px;min-height:180px;text-align:center;">
+          <h2>📚</h2>
+          <h3>Vault</h3>
+          <p>Notes saved to<br>the right folder<br>automatically</p>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,#dc2626,#7c3aed);position:relative;">
+          <div style="position:absolute;right:-8px;top:-5px;color:#a78bfa;font-size:14px;">▶</div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="c-node c-purple" style="position:static;width:180px;min-height:180px;text-align:center;">
+          <h2>🕸</h2>
+          <h3>This Graph</h3>
+          <p>Visual web of<br>all connections<br>updates live</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── COMMANDS PANEL ──────────────────────────────── -->
+<div id="panel-dash" class="panel" style="flex-direction:column;overflow-y:auto;padding:32px;">
+  <div class="page-title">Bridge Commands — copy & paste these</div>
+  <div class="dash-grid">
+
+    <div class="dash-card">
+      <h3>⚡ First-time setup</h3>
+      <div class="cmd-group">
+        <div class="cmd-label">1. Go into the bridge folder</div>
+        <code>cd hermes-vault/bridge</code>
+      </div>
+      <div class="cmd-group">
+        <div class="cmd-label">2. Install dependencies</div>
+        <code>npm install</code>
+      </div>
+      <div class="cmd-group">
+        <div class="cmd-label">3. Create your config file</div>
+        <code>cp config.example.json config.json</code>
+      </div>
+      <div class="cmd-group">
+        <div class="cmd-label">4. Open config.json and add your API keys</div>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <h3>🗣 Chat with one AI</h3>
+      <code>node index.js chat --ai claude "Your question here"</code>
+      <code>node index.js chat --ai gpt "Your question here"</code>
+      <code>node index.js chat --ai gemini "Your question here"</code>
+      <code>node index.js chat --ai hermes "Private question"</code>
+      <p style="margin-top:8px;">Each one saves automatically to the right folder in your vault.</p>
+    </div>
+
+    <div class="dash-card">
+      <h3>⚖️ Compare all AIs at once</h3>
+      <code>node index.js compare "What should I focus on this week?"</code>
+      <p style="margin-top:8px;">Asks all enabled AIs the same question in parallel, then saves a comparison note in Synthesized/.</p>
+    </div>
+
+    <div class="dash-card">
+      <h3>📥 Import an existing chat</h3>
+      <code>node index.js import --ai gpt --title "My chat" chat.txt</code>
+      <p style="margin-top:8px;">Copy-paste any conversation from a browser into a .txt file, then import it into the vault.</p>
+    </div>
+
+    <div class="dash-card">
+      <h3>📊 See today's activity</h3>
+      <code>node index.js brief</code>
+      <p style="margin-top:8px;">Shows all the notes you've saved today across every AI.</p>
+    </div>
+
+    <div class="dash-card">
+      <h3>🔍 Search your vault</h3>
+      <code>node index.js search "machine learning"</code>
+      <code>node index.js search "product idea"</code>
+      <p style="margin-top:8px;">Scans every note for the keyword and shows matching files.</p>
+    </div>
+
+    <div class="dash-card">
+      <h3>🦙 Local Hermes setup (optional)</h3>
+      <p style="margin-bottom:8px;">For completely private, offline AI:</p>
+      <code># Install Ollama (Mac)
+brew install ollama
+
+# Start it
+ollama serve
+
+# Download the model
+ollama pull nous-hermes3</code>
+    </div>
+
+    <div class="dash-card">
+      <h3>📁 Where notes are saved</h3>
+      <ul>
+        <li><div class="dot" style="background:#fb923c"></div>Claude → <code style="background:transparent;border:none;padding:0;">01 - AI Ideas/Claude/</code></li>
+        <li><div class="dot" style="background:#4ade80"></div>GPT → <code style="background:transparent;border:none;padding:0;">01 - AI Ideas/GPT/</code></li>
+        <li><div class="dot" style="background:#60a5fa"></div>Gemini → <code style="background:transparent;border:none;padding:0;">01 - AI Ideas/Gemini/</code></li>
+        <li><div class="dot" style="background:#a78bfa"></div>Hermes → <code style="background:transparent;border:none;padding:0;">01 - AI Ideas/Hermes (Local)/</code></li>
+        <li><div class="dot" style="background:#fbbf24"></div>Compare → <code style="background:transparent;border:none;padding:0;">01 - AI Ideas/Synthesized/</code></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Panel switching ──────────────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── D3 Force Graph ───────────────────────────────────────────────────
+const nodes = [
+  { id: "home",         label: "🏠 Home",           group: "dashboard",  desc: "Main dashboard — links to every section" },
+  { id: "ai-hub",       label: "🤖 AI Hub",          group: "dashboard",  desc: "Central hub for all AI conversations" },
+  { id: "life-dash",    label: "🌱 Life",             group: "dashboard",  desc: "Goals, habits, journal, resources" },
+  { id: "claude",       label: "Claude",              group: "claude",     desc: "Anthropic · Deep reasoning, code, writing, long context" },
+  { id: "gpt",          label: "ChatGPT",             group: "gpt",        desc: "OpenAI · Browsing, DALL-E, plugins, code interpreter" },
+  { id: "gemini",       label: "Gemini",              group: "gemini",     desc: "Google · Multimodal, search grounding, Docs integration" },
+  { id: "hermes",       label: "Hermes\n(Local)",     group: "hermes",     desc: "Nous Research via Ollama · Offline, private, free" },
+  { id: "master",       label: "💡 Synthesized",      group: "synthesis",  desc: "Ideas distilled across all AIs — the gold" },
+  { id: "projects",     label: "🏗 Projects",         group: "project",    desc: "Active and planned projects" },
+  { id: "goals",        label: "🎯 Goals",            group: "life",       desc: "2026 goals, 90-day targets, weekly wins" },
+  { id: "habits",       label: "📊 Habits",           group: "life",       desc: "Daily habit tracking and streaks" },
+  { id: "daily",        label: "📅 Daily Notes",      group: "life",       desc: "Daily journal, intention, capture" },
+  { id: "moc",          label: "🗺 AI Systems MOC",   group: "knowledge",  desc: "Map of content — master reference for AI knowledge" },
+  { id: "concepts",     label: "📚 Concepts",         group: "knowledge",  desc: "Key concepts and mental models" },
+  { id: "cv-ai",        label: "🖼 AI Map",           group: "canvas",     desc: "Visual canvas: all AIs → Hermes → vault" },
+  { id: "cv-life",      label: "🖼 Life Map",         group: "canvas",     desc: "Visual canvas: life areas spider diagram" },
+  { id: "cv-arch",      label: "🖼 Architecture",     group: "canvas",     desc: "Visual canvas: Hermes bridge flow" },
+];
+
+const links = [
+  { source: "home",      target: "ai-hub"    },
+  { source: "home",      target: "life-dash" },
+  { source: "home",      target: "projects"  },
+  { source: "home",      target: "cv-ai"     },
+  { source: "home",      target: "cv-life"   },
+  { source: "home",      target: "cv-arch"   },
+  { source: "ai-hub",    target: "claude"    },
+  { source: "ai-hub",    target: "gpt"       },
+  { source: "ai-hub",    target: "gemini"    },
+  { source: "ai-hub",    target: "hermes"    },
+  { source: "ai-hub",    target: "master"    },
+  { source: "claude",    target: "master"    },
+  { source: "gpt",       target: "master"    },
+  { source: "gemini",    target: "master"    },
+  { source: "hermes",    target: "master"    },
+  { source: "master",    target: "projects"  },
+  { source: "master",    target: "moc"       },
+  { source: "life-dash", target: "goals"     },
+  { source: "life-dash", target: "habits"    },
+  { source: "life-dash", target: "daily"     },
+  { source: "life-dash", target: "projects"  },
+  { source: "moc",       target: "claude"    },
+  { source: "moc",       target: "gpt"       },
+  { source: "moc",       target: "gemini"    },
+  { source: "moc",       target: "hermes"    },
+  { source: "moc",       target: "concepts"  },
+  { source: "cv-ai",     target: "ai-hub"    },
+  { source: "cv-life",   target: "life-dash" },
+  { source: "cv-arch",   target: "hermes"    },
+];
+
+const colors = {
+  dashboard: "#a78bfa",
+  claude:    "#fb923c",
+  gpt:       "#4ade80",
+  gemini:    "#60a5fa",
+  hermes:    "#c084fc",
+  synthesis: "#fbbf24",
+  project:   "#f87171",
+  life:      "#2dd4bf",
+  knowledge: "#94a3b8",
+  canvas:    "#818cf8",
+};
+
+const radii = {
+  dashboard: 22,
+  synthesis: 20,
+  claude:    18,
+  gpt:       18,
+  gemini:    18,
+  hermes:    18,
+  project:   16,
+  life:      14,
+  knowledge: 14,
+  canvas:    13,
+};
+
+const svg = d3.select("#graph-svg");
+const width  = () => svg.node().clientWidth;
+const height = () => svg.node().clientHeight;
+
+const g = svg.append("g");
+let zoomBehavior;
+
+function initGraph() {
+  svg.selectAll("*").remove();
+  const g = svg.append("g");
+
+  zoomBehavior = d3.zoom().scaleExtent([0.2, 4]).on("zoom", e => g.attr("transform", e.transform));
+  svg.call(zoomBehavior);
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link",   d3.forceLink(links).id(d => d.id).distance(90).strength(0.5))
+    .force("charge", d3.forceManyBody().strength(-320))
+    .force("center", d3.forceCenter(width() / 2, height() / 2))
+    .force("collide", d3.forceCollide(d => (radii[d.group] || 16) + 20));
+
+  // glow filter
+  const defs = svg.append("defs");
+  const filter = defs.append("filter").attr("id", "glow");
+  filter.append("feGaussianBlur").attr("stdDeviation", "3").attr("result", "coloredBlur");
+  const feMerge = filter.append("feMerge");
+  feMerge.append("feMergeNode").attr("in", "coloredBlur");
+  feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+  // links
+  const link = g.append("g").selectAll("line")
+    .data(links).join("line")
+    .attr("class", "link");
+
+  // nodes
+  const node = g.append("g").selectAll("g")
+    .data(nodes).join("g")
+    .attr("class", "node")
+    .call(d3.drag()
+      .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+
+  node.append("circle")
+    .attr("r", d => radii[d.group] || 16)
+    .attr("fill", d => colors[d.group] + "33")
+    .attr("stroke", d => colors[d.group])
+    .style("filter", "url(#glow)");
+
+  // multi-line labels
+  node.each(function(d) {
+    const el = d3.select(this);
+    const lines = d.label.split('\n');
+    if (lines.length === 1) {
+      el.append("text").text(d.label).attr("dy", "0.35em");
+    } else {
+      lines.forEach((line, i) => {
+        el.append("text")
+          .text(line)
+          .attr("dy", `${(i - (lines.length-1)/2) * 13}px`);
+      });
+    }
+  });
+
+  // tooltip
+  const tooltip = document.getElementById("tooltip");
+  node.on("mouseover", function(e, d) {
+    tooltip.style.opacity = "1";
+    tooltip.querySelector("strong").textContent = d.label.replace('\n', ' ');
+    tooltip.querySelector("span").textContent   = d.desc;
+    // highlight connected
+    const connected = new Set([d.id]);
+    links.forEach(l => {
+      if (l.source.id === d.id || l.target.id === d.id) {
+        connected.add(l.source.id); connected.add(l.target.id);
+      }
+    });
+    link.classed("highlighted", l => l.source.id === d.id || l.target.id === d.id)
+        .attr("stroke", l => (l.source.id===d.id||l.target.id===d.id) ? colors[d.group] : "#30363d");
+    node.select("circle").attr("opacity", nd => connected.has(nd.id) ? 1 : 0.25);
+  })
+  .on("mousemove", e => {
+    tooltip.style.left = (e.clientX + 14) + "px";
+    tooltip.style.top  = (e.clientY - 10) + "px";
+  })
+  .on("mouseout", () => {
+    tooltip.style.opacity = "0";
+    link.classed("highlighted", false).attr("stroke", "#30363d");
+    node.select("circle").attr("opacity", 1);
+  });
+
+  sim.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  window._sim = sim;
+  window._zoom = zoomBehavior;
+  window._svg  = svg;
+}
+
+function zoomIn()    { svg.transition().call(zoomBehavior.scaleBy, 1.4); }
+function zoomOut()   { svg.transition().call(zoomBehavior.scaleBy, 0.7); }
+function resetZoom() { svg.transition().call(zoomBehavior.transform, d3.zoomIdentity); }
+
+initGraph();
+window.addEventListener("resize", initGraph);
+
+// ── Draw SVG edges for canvas maps ──────────────────────────────────
+function getCenter(el) {
+  const r = el.getBoundingClientRect();
+  const board = el.closest('.canvas-board').getBoundingClientRect();
+  return {
+    x: r.left - board.left + r.width  / 2,
+    y: r.top  - board.top  + r.height / 2,
+    w: r.width,
+    h: r.height,
+  };
+}
+
+function edgePts(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const angle = Math.atan2(dy, dx);
+  const ax = a.x + Math.cos(angle) * a.w / 2;
+  const ay = a.y + Math.sin(angle) * a.h / 2;
+  const bx = b.x - Math.cos(angle) * (b.w / 2 + 10);
+  const by = b.y - Math.sin(angle) * (b.h / 2 + 10);
+  return `M${ax},${ay} L${bx},${by}`;
+}
+
+function drawEdges(pairs, svgId) {
+  const svgEl = document.getElementById(svgId);
+  if (!svgEl) return;
+  svgEl.innerHTML = `<defs><marker id="arr-${svgId}" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4a5568"/></marker></defs>`;
+  pairs.forEach(([aid, bid, label]) => {
+    const a = document.getElementById(aid);
+    const b = document.getElementById(bid);
+    if (!a || !b) return;
+    const ac = getCenter(a), bc = getCenter(b);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", edgePts(ac, bc));
+    path.setAttribute("stroke", "#4a5568");
+    path.setAttribute("stroke-width", "1.5");
+    path.setAttribute("fill", "none");
+    path.setAttribute("marker-end", `url(#arr-${svgId})`);
+    svgEl.appendChild(path);
+    if (label) {
+      const mid = { x: (ac.x + bc.x) / 2, y: (ac.y + bc.y) / 2 };
+      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      txt.setAttribute("x", mid.x); txt.setAttribute("y", mid.y - 5);
+      txt.setAttribute("text-anchor", "middle");
+      txt.setAttribute("fill", "#8b949e"); txt.setAttribute("font-size", "10");
+      txt.textContent = label;
+      svgEl.appendChild(txt);
+    }
+  });
+}
+
+const aiEdges = [
+  ["cn-claude",  "cn-center", "ideas"],
+  ["cn-gpt",     "cn-center", "ideas"],
+  ["cn-gemini",  "cn-center", "ideas"],
+  ["cn-hermes",  "cn-center", "ideas"],
+  ["cn-center",  "cn-ideas",  "captures"],
+  ["cn-center",  "cn-synth",  "synthesizes"],
+  ["cn-center",  "cn-proj",   "fuels"],
+  ["cn-center",  "cn-know",   "builds"],
+  ["cn-center",  "cn-life",   "organizes"],
+  ["cn-home",    "cn-center", ""],
+  ["cn-ideas",   "cn-synth",  "distills"],
+  ["cn-synth",   "cn-proj",   "becomes"],
+];
+
+const lifeEdges = [
+  ["lc-you",  "lc-work",    ""],
+  ["lc-you",  "lc-health",  ""],
+  ["lc-you",  "lc-learning",""],
+  ["lc-you",  "lc-ai",      ""],
+  ["lc-you",  "lc-goals",   ""],
+  ["lc-you",  "lc-creative",""],
+  ["lc-you",  "lc-finance", ""],
+  ["lc-you",  "lc-people",  ""],
+  ["lc-you",  "lc-daily",   ""],
+  ["lc-learning","lc-ai",   "feeds"],
+];
+
+// Draw edges after layout is painted
+setTimeout(() => {
+  drawEdges(aiEdges,   "svg-ai");
+  drawEdges(lifeEdges, "svg-life");
+}, 300);
+
+// Redraw on panel switch
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => setTimeout(() => {
+    drawEdges(aiEdges,   "svg-ai");
+    drawEdges(lifeEdges, "svg-life");
+  }, 50));
+});
+</script>
+</body>
+</html>
