@@ -1,0 +1,249 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "x": -200,
+      "y": -600,
+      "width": 400,
+      "height": 80,
+      "type": "text",
+      "text": "# 🪽 Hermes Bridge — Architecture",
+      "color": "6"
+    },
+    {
+      "id": "you-node",
+      "x": -1200,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 👤 You\n\nType a prompt\nor paste a\nconversation",
+      "color": "6"
+    },
+    {
+      "id": "cli-node",
+      "x": -880,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 💻 Hermes CLI\n\n`node index.js`\n\nchat\ncompare\nimport\nbrief\nsearch",
+      "color": "5"
+    },
+    {
+      "id": "router-node",
+      "x": -560,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 🔀 Router\n\nRoutes to the\nright AI(s)\n\nParallel or\nsequential",
+      "color": "3"
+    },
+    {
+      "id": "claude-provider",
+      "x": -240,
+      "y": -340,
+      "width": 180,
+      "height": 120,
+      "type": "text",
+      "text": "## Claude API\n`providers/\nclaude.js`",
+      "color": "2"
+    },
+    {
+      "id": "gpt-provider",
+      "x": -240,
+      "y": -180,
+      "width": 180,
+      "height": 120,
+      "type": "text",
+      "text": "## OpenAI API\n`providers/\nopenai.js`",
+      "color": "4"
+    },
+    {
+      "id": "gemini-provider",
+      "x": -240,
+      "y": 20,
+      "width": 180,
+      "height": 120,
+      "type": "text",
+      "text": "## Gemini API\n`providers/\ngemini.js`",
+      "color": "5"
+    },
+    {
+      "id": "ollama-provider",
+      "x": -240,
+      "y": 220,
+      "width": 180,
+      "height": 120,
+      "type": "text",
+      "text": "## Ollama\n(Local Hermes)\n`providers/\nollama.js`",
+      "color": "6"
+    },
+    {
+      "id": "formatter-node",
+      "x": 80,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 📝 Formatter\n\nAdds frontmatter\nExtracts ideas\nCreates links\nFormats MD",
+      "color": "3"
+    },
+    {
+      "id": "writer-node",
+      "x": 400,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 💾 Vault Writer\n\nCreates notes\nin the right\nfolder\n\n`vault/writer.js`",
+      "color": "1"
+    },
+    {
+      "id": "vault-node",
+      "x": 720,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 📚 Obsidian Vault\n\nAI Ideas\nProjects\nKnowledge\nLife",
+      "color": "4"
+    },
+    {
+      "id": "graph-node",
+      "x": 1040,
+      "y": -100,
+      "width": 200,
+      "height": 200,
+      "type": "text",
+      "text": "## 🕸 Graph View\n\nVisual web of\nall connections\n\nCmd+G to open",
+      "color": "6"
+    },
+    {
+      "id": "config-note",
+      "x": -880,
+      "y": 200,
+      "width": 400,
+      "height": 120,
+      "type": "text",
+      "text": "⚙️ **Config:** `bridge/config.json` — set your API keys here",
+      "color": "3"
+    },
+    {
+      "id": "commands-note",
+      "x": -1200,
+      "y": 200,
+      "width": 300,
+      "height": 240,
+      "type": "text",
+      "text": "## Commands\n```\n# Chat with one AI\nnode index.js chat \\\n  --ai claude \\\n  \"Your question\"\n\n# Compare all AIs\nnode index.js compare \\\n  \"Your question\"\n\n# Daily brief\nnode index.js brief\n\n# Search vault\nnode index.js search \\\n  \"topic\"\n```"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-you-cli",
+      "fromNode": "you-node",
+      "fromSide": "right",
+      "toNode": "cli-node",
+      "toSide": "left",
+      "color": "6"
+    },
+    {
+      "id": "e-cli-router",
+      "fromNode": "cli-node",
+      "fromSide": "right",
+      "toNode": "router-node",
+      "toSide": "left",
+      "color": "5"
+    },
+    {
+      "id": "e-router-claude",
+      "fromNode": "router-node",
+      "fromSide": "right",
+      "toNode": "claude-provider",
+      "toSide": "left",
+      "color": "2"
+    },
+    {
+      "id": "e-router-gpt",
+      "fromNode": "router-node",
+      "fromSide": "right",
+      "toNode": "gpt-provider",
+      "toSide": "left",
+      "color": "4"
+    },
+    {
+      "id": "e-router-gemini",
+      "fromNode": "router-node",
+      "fromSide": "right",
+      "toNode": "gemini-provider",
+      "toSide": "left",
+      "color": "5"
+    },
+    {
+      "id": "e-router-ollama",
+      "fromNode": "router-node",
+      "fromSide": "right",
+      "toNode": "ollama-provider",
+      "toSide": "left",
+      "color": "6"
+    },
+    {
+      "id": "e-claude-formatter",
+      "fromNode": "claude-provider",
+      "fromSide": "right",
+      "toNode": "formatter-node",
+      "toSide": "left",
+      "color": "2"
+    },
+    {
+      "id": "e-gpt-formatter",
+      "fromNode": "gpt-provider",
+      "fromSide": "right",
+      "toNode": "formatter-node",
+      "toSide": "left",
+      "color": "4"
+    },
+    {
+      "id": "e-gemini-formatter",
+      "fromNode": "gemini-provider",
+      "fromSide": "right",
+      "toNode": "formatter-node",
+      "toSide": "left",
+      "color": "5"
+    },
+    {
+      "id": "e-ollama-formatter",
+      "fromNode": "ollama-provider",
+      "fromSide": "right",
+      "toNode": "formatter-node",
+      "toSide": "left",
+      "color": "6"
+    },
+    {
+      "id": "e-formatter-writer",
+      "fromNode": "formatter-node",
+      "fromSide": "right",
+      "toNode": "writer-node",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "e-writer-vault",
+      "fromNode": "writer-node",
+      "fromSide": "right",
+      "toNode": "vault-node",
+      "toSide": "left",
+      "color": "4"
+    },
+    {
+      "id": "e-vault-graph",
+      "fromNode": "vault-node",
+      "fromSide": "right",
+      "toNode": "graph-node",
+      "toSide": "left",
+      "color": "6"
+    }
+  ]
+}

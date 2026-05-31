@@ -1,0 +1,244 @@
+{
+  "nodes": [
+    {
+      "id": "hermes-center",
+      "x": -160,
+      "y": -120,
+      "width": 320,
+      "height": 240,
+      "type": "text",
+      "text": "# 🪽 HERMES\n## AI Synthesis Hub\n\nAll your AIs, unified.\nOne vault. All connections.\n\n`node bridge/index.js`",
+      "color": "6"
+    },
+    {
+      "id": "claude-node",
+      "x": -780,
+      "y": -340,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "01 - AI Ideas/Claude/Overview.md",
+      "color": "2"
+    },
+    {
+      "id": "gpt-node",
+      "x": -780,
+      "y": -140,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "01 - AI Ideas/GPT/Overview.md",
+      "color": "4"
+    },
+    {
+      "id": "gemini-node",
+      "x": -780,
+      "y": 60,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "01 - AI Ideas/Gemini/Overview.md",
+      "color": "5"
+    },
+    {
+      "id": "local-node",
+      "x": -780,
+      "y": 260,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "01 - AI Ideas/Hermes (Local)/Overview.md",
+      "color": "6"
+    },
+    {
+      "id": "aiideas-node",
+      "x": 440,
+      "y": -340,
+      "width": 240,
+      "height": 140,
+      "type": "text",
+      "text": "## 💡 AI Ideas\nAll raw ideas\nfrom every AI\n\n→ `01 - AI Ideas/`",
+      "color": "3"
+    },
+    {
+      "id": "synthesis-node",
+      "x": 440,
+      "y": -140,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "01 - AI Ideas/Synthesized/Master Ideas.md",
+      "color": "3"
+    },
+    {
+      "id": "projects-node",
+      "x": 440,
+      "y": 60,
+      "width": 240,
+      "height": 140,
+      "type": "file",
+      "file": "02 - Projects/Projects Overview.md",
+      "color": "1"
+    },
+    {
+      "id": "knowledge-node",
+      "x": 440,
+      "y": 260,
+      "width": 240,
+      "height": 140,
+      "type": "text",
+      "text": "## 🧠 Knowledge\nConcepts, research\n& maps of content\n\n→ `04 - Knowledge/`",
+      "color": "4"
+    },
+    {
+      "id": "life-node",
+      "x": -160,
+      "y": 240,
+      "width": 320,
+      "height": 120,
+      "type": "file",
+      "file": "00 - Dashboard/Life Dashboard.md",
+      "color": "4"
+    },
+    {
+      "id": "home-node",
+      "x": -160,
+      "y": -380,
+      "width": 320,
+      "height": 120,
+      "type": "file",
+      "file": "00 - Dashboard/Home.md",
+      "color": "6"
+    },
+    {
+      "id": "ai-hub-node",
+      "x": -780,
+      "y": -500,
+      "width": 240,
+      "height": 100,
+      "type": "text",
+      "text": "## 🤖 Your 4 AIs\nClick any to explore",
+      "color": "6"
+    },
+    {
+      "id": "vault-label",
+      "x": 440,
+      "y": -500,
+      "width": 240,
+      "height": 100,
+      "type": "text",
+      "text": "## 📚 Your Vault\nOrganized knowledge",
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-claude-hermes",
+      "fromNode": "claude-node",
+      "fromSide": "right",
+      "toNode": "hermes-center",
+      "toSide": "left",
+      "label": "ideas",
+      "color": "2"
+    },
+    {
+      "id": "e-gpt-hermes",
+      "fromNode": "gpt-node",
+      "fromSide": "right",
+      "toNode": "hermes-center",
+      "toSide": "left",
+      "label": "ideas",
+      "color": "4"
+    },
+    {
+      "id": "e-gemini-hermes",
+      "fromNode": "gemini-node",
+      "fromSide": "right",
+      "toNode": "hermes-center",
+      "toSide": "left",
+      "label": "ideas",
+      "color": "5"
+    },
+    {
+      "id": "e-local-hermes",
+      "fromNode": "local-node",
+      "fromSide": "right",
+      "toNode": "hermes-center",
+      "toSide": "left",
+      "label": "ideas",
+      "color": "6"
+    },
+    {
+      "id": "e-hermes-aiideas",
+      "fromNode": "hermes-center",
+      "fromSide": "right",
+      "toNode": "aiideas-node",
+      "toSide": "left",
+      "label": "captures",
+      "color": "3"
+    },
+    {
+      "id": "e-hermes-synthesis",
+      "fromNode": "hermes-center",
+      "fromSide": "right",
+      "toNode": "synthesis-node",
+      "toSide": "left",
+      "label": "synthesizes",
+      "color": "3"
+    },
+    {
+      "id": "e-hermes-projects",
+      "fromNode": "hermes-center",
+      "fromSide": "right",
+      "toNode": "projects-node",
+      "toSide": "left",
+      "label": "fuels",
+      "color": "1"
+    },
+    {
+      "id": "e-hermes-knowledge",
+      "fromNode": "hermes-center",
+      "fromSide": "right",
+      "toNode": "knowledge-node",
+      "toSide": "left",
+      "label": "builds",
+      "color": "4"
+    },
+    {
+      "id": "e-hermes-life",
+      "fromNode": "hermes-center",
+      "fromSide": "bottom",
+      "toNode": "life-node",
+      "toSide": "top",
+      "label": "organizes",
+      "color": "4"
+    },
+    {
+      "id": "e-home-hermes",
+      "fromNode": "home-node",
+      "fromSide": "bottom",
+      "toNode": "hermes-center",
+      "toSide": "top",
+      "label": "dashboard",
+      "color": "6"
+    },
+    {
+      "id": "e-aiideas-synthesis",
+      "fromNode": "aiideas-node",
+      "fromSide": "bottom",
+      "toNode": "synthesis-node",
+      "toSide": "top",
+      "label": "distills to",
+      "color": "3"
+    },
+    {
+      "id": "e-synthesis-projects",
+      "fromNode": "synthesis-node",
+      "fromSide": "bottom",
+      "toNode": "projects-node",
+      "toSide": "top",
+      "label": "becomes",
+      "color": "1"
+    }
+  ]
+}

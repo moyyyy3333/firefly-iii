@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "you-center",
+      "x": -160,
+      "y": -100,
+      "width": 320,
+      "height": 200,
+      "type": "text",
+      "text": "# 🧭 YOU\n\nEvery area of your life,\nconnected and visible.",
+      "color": "6"
+    },
+    {
+      "id": "health-node",
+      "x": -700,
+      "y": -380,
+      "width": 220,
+      "height": 160,
+      "type": "text",
+      "text": "## 🏋 Health\n\n- [ ] Exercise\n- [ ] Sleep\n- [ ] Nutrition\n- [ ] Mental health",
+      "color": "4"
+    },
+    {
+      "id": "work-node",
+      "x": -160,
+      "y": -440,
+      "width": 320,
+      "height": 160,
+      "type": "text",
+      "text": "## 💼 Work / Career\n\n- [ ] Current role\n- [ ] Skills to build\n- [ ] Opportunities\n- [ ] Side projects",
+      "color": "1"
+    },
+    {
+      "id": "learning-node",
+      "x": 380,
+      "y": -380,
+      "width": 220,
+      "height": 160,
+      "type": "text",
+      "text": "## 🧠 Learning\n\n- [ ] AI/tech\n- [ ] Books\n- [ ] Courses\n- [ ] Skills",
+      "color": "5"
+    },
+    {
+      "id": "finance-node",
+      "x": 380,
+      "y": 180,
+      "width": 220,
+      "height": 160,
+      "type": "text",
+      "text": "## 💸 Finance\n\n- [ ] Budget\n- [ ] Savings goals\n- [ ] Investments\n- [ ] Income streams",
+      "color": "3"
+    },
+    {
+      "id": "relationships-node",
+      "x": -160,
+      "y": 280,
+      "width": 320,
+      "height": 160,
+      "type": "text",
+      "text": "## 👥 Relationships\n\n- [ ] Family\n- [ ] Friends\n- [ ] Professional network\n- [ ] Community",
+      "color": "2"
+    },
+    {
+      "id": "creative-node",
+      "x": -700,
+      "y": 180,
+      "width": 220,
+      "height": 160,
+      "type": "text",
+      "text": "## 🎨 Creative\n\n- [ ] Projects\n- [ ] Ideas\n- [ ] Expression\n- [ ] Making things",
+      "color": "2"
+    },
+    {
+      "id": "ai-projects-node",
+      "x": -700,
+      "y": -100,
+      "width": 220,
+      "height": 200,
+      "type": "file",
+      "file": "00 - Dashboard/AI Hub.md",
+      "color": "6"
+    },
+    {
+      "id": "goals-node",
+      "x": 380,
+      "y": -100,
+      "width": 220,
+      "height": 200,
+      "type": "file",
+      "file": "03 - Life/Goals/My Goals.md",
+      "color": "1"
+    },
+    {
+      "id": "daily-node",
+      "x": -160,
+      "y": 520,
+      "width": 320,
+      "height": 120,
+      "type": "text",
+      "text": "## 📅 Daily Practice\nMorning intention → Focus → Evening review",
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-you-health",
+      "fromNode": "you-center",
+      "fromSide": "left",
+      "toNode": "health-node",
+      "toSide": "right",
+      "color": "4"
+    },
+    {
+      "id": "e-you-work",
+      "fromNode": "you-center",
+      "fromSide": "top",
+      "toNode": "work-node",
+      "toSide": "bottom",
+      "color": "1"
+    },
+    {
+      "id": "e-you-learning",
+      "fromNode": "you-center",
+      "fromSide": "right",
+      "toNode": "learning-node",
+      "toSide": "left",
+      "color": "5"
+    },
+    {
+      "id": "e-you-finance",
+      "fromNode": "you-center",
+      "fromSide": "right",
+      "toNode": "finance-node",
+      "toSide": "left",
+      "color": "3"
+    },
+    {
+      "id": "e-you-relationships",
+      "fromNode": "you-center",
+      "fromSide": "bottom",
+      "toNode": "relationships-node",
+      "toSide": "top",
+      "color": "2"
+    },
+    {
+      "id": "e-you-creative",
+      "fromNode": "you-center",
+      "fromSide": "left",
+      "toNode": "creative-node",
+      "toSide": "right",
+      "color": "2"
+    },
+    {
+      "id": "e-you-ai",
+      "fromNode": "you-center",
+      "fromSide": "left",
+      "toNode": "ai-projects-node",
+      "toSide": "right",
+      "color": "6"
+    },
+    {
+      "id": "e-you-goals",
+      "fromNode": "you-center",
+      "fromSide": "right",
+      "toNode": "goals-node",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "e-you-daily",
+      "fromNode": "you-center",
+      "fromSide": "bottom",
+      "toNode": "daily-node",
+      "toSide": "top",
+      "color": "4"
+    },
+    {
+      "id": "e-learning-ai",
+      "fromNode": "learning-node",
+      "fromSide": "left",
+      "toNode": "ai-projects-node",
+      "toSide": "top",
+      "label": "feeds",
+      "color": "5"
+    }
+  ]
+}

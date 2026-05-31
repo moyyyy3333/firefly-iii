@@ -1,0 +1,55 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "tag:#claude",
+      "color": { "a": 1, "rgb": 16744448 }
+    },
+    {
+      "query": "tag:#gpt",
+      "color": { "a": 1, "rgb": 4456448 }
+    },
+    {
+      "query": "tag:#gemini",
+      "color": { "a": 1, "rgb": 4473897 }
+    },
+    {
+      "query": "tag:#hermes",
+      "color": { "a": 1, "rgb": 10053324 }
+    },
+    {
+      "query": "tag:#idea",
+      "color": { "a": 1, "rgb": 16744272 }
+    },
+    {
+      "query": "tag:#project",
+      "color": { "a": 1, "rgb": 9699539 }
+    },
+    {
+      "query": "tag:#life",
+      "color": { "a": 1, "rgb": 5614848 }
+    },
+    {
+      "query": "tag:#synthesis",
+      "color": { "a": 1, "rgb": 16711935 }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.8,
+  "lineSizeMultiplier": 1.2,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 40,
+  "scale": 0.8,
+  "close": false
+}

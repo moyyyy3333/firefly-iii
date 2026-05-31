@@ -1,0 +1,6 @@
+{
+  "autorun": false,
+  "default": "03 - Life/Daily Notes",
+  "format": "YYYY-MM-DD",
+  "template": "Templates/Daily Note"
+}

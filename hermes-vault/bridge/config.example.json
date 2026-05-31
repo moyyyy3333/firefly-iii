@@ -1,0 +1,40 @@
+{
+  "_comment": "Copy this to config.json and fill in your keys. config.json is gitignored.",
+  "vaultPath": "../vault",
+  "defaultAI": "claude",
+  "providers": {
+    "claude": {
+      "enabled": true,
+      "apiKey": "YOUR_ANTHROPIC_API_KEY",
+      "model": "claude-sonnet-4-6",
+      "maxTokens": 4096
+    },
+    "gpt": {
+      "enabled": true,
+      "apiKey": "YOUR_OPENAI_API_KEY",
+      "model": "gpt-4o",
+      "maxTokens": 4096
+    },
+    "gemini": {
+      "enabled": true,
+      "apiKey": "YOUR_GOOGLE_AI_API_KEY",
+      "model": "gemini-1.5-pro",
+      "maxTokens": 4096
+    },
+    "hermes": {
+      "enabled": true,
+      "apiKey": "",
+      "baseUrl": "http://localhost:11434",
+      "model": "nous-hermes3",
+      "maxTokens": 4096
+    }
+  },
+  "vault": {
+    "aiIdeasFolder": "01 - AI Ideas",
+    "projectsFolder": "02 - Projects",
+    "lifeFolder": "03 - Life",
+    "knowledgeFolder": "04 - Knowledge",
+    "dailyNotesFolder": "03 - Life/Daily Notes",
+    "synthesizedFolder": "01 - AI Ideas/Synthesized"
+  }
+}

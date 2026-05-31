@@ -1,0 +1,28 @@
+{
+  "defaultViewMode": "preview",
+  "foldHeading": false,
+  "foldIndent": false,
+  "legacyEditor": false,
+  "livePreview": true,
+  "newFileLocation": "current",
+  "newLinkFormat": "shortest",
+  "pdfExportSettings": {
+    "pageSize": "letter",
+    "landscape": false,
+    "margin": "0",
+    "downscaleEmbeddedImages": true
+  },
+  "promptDelete": false,
+  "readableLineLength": true,
+  "showFrontmatter": false,
+  "showInlineTitle": true,
+  "showLineNumber": false,
+  "spellcheck": false,
+  "spellcheckLanguages": ["en"],
+  "strictLineBreaks": false,
+  "tabSize": 4,
+  "theme": "",
+  "translucency": false,
+  "useMarkdownLinks": false,
+  "userIgnoreFilters": ["bridge/", ".git/"]
+}
