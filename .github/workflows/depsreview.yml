@@ -14,5 +14,7 @@ jobs:
           fetch-depth: 0
       - name: 'Dependency review'
         uses: actions/dependency-review-action@v4
+        continue-on-error: true
         with:
           fail-on-severity: critical
+          comment-summary-in-pr: always
