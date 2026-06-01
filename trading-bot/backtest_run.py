@@ -15,6 +15,7 @@ sys.path.insert(0, ".")
 from config.settings import (
     BACKTEST_START, BACKTEST_END,
     CRYPTO_SYMBOLS, STOCK_SYMBOLS, STARTING_CAPITAL,
+    MIN_WAGER, MAX_WAGER,
 )
 from src.data.fetcher import fetch_ohlcv
 from src.strategies import MomentumStrategy, MeanReversionStrategy, TrendFollowingStrategy
@@ -35,6 +36,8 @@ def main():
     parser.add_argument("--start", default=BACKTEST_START)
     parser.add_argument("--end", default=BACKTEST_END)
     parser.add_argument("--capital", type=float, default=STARTING_CAPITAL)
+    parser.add_argument("--min-wager", type=float, default=MIN_WAGER, help="Min wager per trade ($)")
+    parser.add_argument("--max-wager", type=float, default=MAX_WAGER, help="Max wager per trade ($)")
     parser.add_argument("--plot", action="store_true", help="Save equity curve chart")
     parser.add_argument("--patterns", action="store_true", help="Print documented market patterns")
     args = parser.parse_args()
@@ -66,7 +69,12 @@ def main():
         for symbol, df in data.items():
             print(f"\n  Running {strategy.name} on {symbol}...")
             try:
-                engine = BacktestEngine(strategy, starting_capital=args.capital)
+                engine = BacktestEngine(
+                    strategy,
+                    starting_capital=args.capital,
+                    min_wager=args.min_wager,
+                    max_wager=args.max_wager,
+                )
                 result = engine.run(df, symbol)
                 result.print_summary()
                 all_results.append(result)

@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, ".")
 
 from config.settings import (
-    PAPER_TRADING, STARTING_CAPITAL, MAX_RISK_PER_TRADE,
+    PAPER_TRADING, STARTING_CAPITAL, MIN_WAGER, MAX_WAGER,
     CRYPTO_SYMBOLS, STOCK_SYMBOLS,
 )
 from src.data.fetcher import fetch_ohlcv, fetch_fear_greed
@@ -115,10 +115,13 @@ def run():
                     if fg and fg["current_value"] >= 80 and latest.direction == "long":
                         continue
 
+                    from src.risk.manager import RiskManager as _RM
+                    tier = _RM.wager_tier(latest.confidence)
                     print(f"    [{strategy.name}] {latest.direction.upper()} signal — "
                           f"entry: ${latest.entry_price:.2f}, "
                           f"stop: ${latest.stop_loss:.2f}, "
                           f"target: ${latest.take_profit:.2f} | "
+                          f"bet size: {tier} (confidence {latest.confidence:.0%}) | "
                           f"{latest.reason}")
                     all_signals.append({
                         "symbol": symbol,
@@ -140,7 +143,8 @@ def run():
     if all_signals and PAPER_TRADING:
         rm = RiskManager(
             capital=capital,
-            max_risk_pct=MAX_RISK_PER_TRADE,
+            min_wager=MIN_WAGER,
+            max_wager=MAX_WAGER,
             max_open_positions=5,
         )
         # Restore open positions
@@ -163,7 +167,8 @@ def run():
                 )
                 if pos:
                     print(f"  ✓ OPENED {sig['direction'].upper()} {sig['symbol']} "
-                          f"× {pos.size:.4f} units @ ${pos.entry_price:.2f}")
+                          f"wager=${pos.wager:.2f} × {pos.size:.6f} units @ ${pos.entry_price:.2f} "
+                          f"| stop=${pos.stop_loss:.2f} target=${pos.take_profit:.2f}")
                     log_trade({**sig, "action": "open", "size": pos.size})
 
         # Save updated state

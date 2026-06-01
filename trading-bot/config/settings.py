@@ -9,15 +9,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Capital & risk -------------------------------------------------------
-STARTING_CAPITAL = float(os.getenv("STARTING_CAPITAL", "10000"))
-MAX_RISK_PER_TRADE = float(os.getenv("MAX_RISK_PER_TRADE", "0.02"))   # 2% per trade
+STARTING_CAPITAL = float(os.getenv("STARTING_CAPITAL", "500"))
 MAX_OPEN_POSITIONS = int(os.getenv("MAX_OPEN_POSITIONS", "5"))
-MAX_PORTFOLIO_RISK = float(os.getenv("MAX_PORTFOLIO_RISK", "0.10"))    # 10% total
+
+# --- Fixed wager sizing (replaces % risk model) ---------------------------
+# Each trade risks a fixed dollar amount regardless of account size.
+# Tune MIN_WAGER/MAX_WAGER to your comfort level ($25–$100).
+MIN_WAGER = float(os.getenv("MIN_WAGER", "25"))
+MAX_WAGER = float(os.getenv("MAX_WAGER", "50"))    # conservative default; raise to 100 as account grows
 
 # --- Defaults -------------------------------------------------------------
-DEFAULT_STOP_LOSS_PCT = 0.03      # 3% hard stop
-DEFAULT_TAKE_PROFIT_PCT = 0.06    # 6% target → 2:1 R/R
-TRAILING_STOP_PCT = 0.02
+DEFAULT_STOP_LOSS_PCT = 0.04      # 4% hard stop on crypto (covers normal noise)
+DEFAULT_TAKE_PROFIT_PCT = 0.08    # 8% target → 2:1 R/R on a 4% stop
+TRAILING_STOP_PCT = 0.025
 
 # --- Data -----------------------------------------------------------------
 CRYPTO_SYMBOLS = ["BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "AVAX-USD"]
