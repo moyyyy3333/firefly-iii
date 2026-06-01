@@ -13,7 +13,6 @@ Example: $50 wager on BTC at $60,000
 
 from dataclasses import dataclass, field
 from typing import Optional
-import pandas as pd
 
 
 @dataclass
@@ -27,7 +26,8 @@ class Position:
     side: str             # "long" | "short"
     entry_date: str = ""
     trailing_stop: Optional[float] = None
-    pnl: float = 0.0
+    fees: float = 0.0     # total fees paid (entry + exit)
+    pnl: float = 0.0      # net P&L after fees
     closed: bool = False
     exit_price: Optional[float] = None
     exit_date: str = ""
@@ -39,6 +39,7 @@ class RiskManager:
     min_wager: float = 25.0
     max_wager: float = 50.0
     max_open_positions: int = 5
+    commission: float = 0.001   # 0.1% per fill (entry and exit)
     open_positions: list = field(default_factory=list)
     closed_positions: list = field(default_factory=list)
     trade_log: list = field(default_factory=list)
@@ -59,7 +60,7 @@ class RiskManager:
 
         Confidence is set by each strategy based on how many conditions
         align simultaneously — more confirmations = bigger bet.
-        Never exceeds 20% of free capital regardless of tier.
+        Never exceeds 20% of total equity regardless of tier.
         """
         if confidence < 0.50:
             wager = self.min_wager
@@ -67,7 +68,10 @@ class RiskManager:
             wager = (self.min_wager + self.max_wager) / 2
         else:
             wager = self.max_wager
-        return min(wager, self.capital * 0.20)
+        # Cap at 20% of total equity (free cash + deployed)
+        deployed = sum(p.wager for p in self.open_positions if not p.closed)
+        total_equity = self.capital + deployed
+        return min(wager, total_equity * 0.20)
 
     @staticmethod
     def wager_tier(confidence: float) -> str:
@@ -81,9 +85,11 @@ class RiskManager:
         active = [p for p in self.open_positions if not p.closed]
         if len(active) >= self.max_open_positions:
             return False
-        # Don't deploy more than 80% of capital at once
+        # Use total equity (free cash + deployed) as the basis for the 80% cap
+        # so the cap doesn't shrink as positions are opened.
         deployed = sum(p.wager for p in active)
-        return deployed < self.capital * 0.80
+        total_equity = self.capital + deployed
+        return deployed < total_equity * 0.80
 
     def open_position(
         self,
@@ -103,7 +109,8 @@ class RiskManager:
         size = self.position_size(price, wager)
         if size <= 0:
             return None
-        self.capital -= wager
+        entry_fee = wager * self.commission
+        self.capital -= wager + entry_fee
         pos = Position(
             symbol=symbol,
             entry_price=price,
@@ -113,6 +120,7 @@ class RiskManager:
             wager=wager,
             side=side,
             entry_date=date,
+            fees=entry_fee,
         )
         self.open_positions.append(pos)
         return pos
@@ -162,15 +170,18 @@ class RiskManager:
         return "open"
 
     def _close(self, pos: Position, exit_price: float, date: str, reason: str):
-        if pos.side == "long":
-            pos.pnl = (exit_price - pos.entry_price) * pos.size
-        else:
-            pos.pnl = (pos.entry_price - exit_price) * pos.size
+        gross_pnl = (
+            (exit_price - pos.entry_price) * pos.size if pos.side == "long"
+            else (pos.entry_price - exit_price) * pos.size
+        )
+        exit_fee = abs(exit_price * pos.size) * self.commission
+        pos.fees += exit_fee
+        pos.pnl = gross_pnl - exit_fee       # net P&L on this trade
         pos.closed = True
         pos.exit_price = exit_price
         pos.exit_date = date
-        # Return wager + profit/loss back to free capital
-        self.capital += pos.wager + pos.pnl
+        # Return wager + gross gain, minus the exit commission
+        self.capital += pos.wager + gross_pnl - exit_fee
         self.closed_positions.append(pos)
         self.open_positions = [p for p in self.open_positions if not p.closed]
         self.trade_log.append({
@@ -182,12 +193,18 @@ class RiskManager:
             "exit": exit_price,
             "size": pos.size,
             "wager": pos.wager,
+            "fees": pos.fees,
             "pnl": pos.pnl,
             "pnl_pct": (pos.pnl / pos.wager) * 100 if pos.wager else 0,
             "reason": reason,
         })
 
-    def force_close_all(self, prices: dict[str, float], date: str):
+    def close_position(self, pos: Position, exit_price: float, date: str, reason: str = "signal_exit"):
+        """Explicitly close a position at a given price (e.g. on exit signal)."""
+        if not pos.closed:
+            self._close(pos, exit_price, date, reason)
+
+    def force_close_all(self, prices: dict, date: str):
         for pos in list(self.open_positions):
             if not pos.closed and pos.symbol in prices:
                 self._close(pos, prices[pos.symbol], date, "eod_close")
@@ -199,6 +216,7 @@ class RiskManager:
         wins = [t for t in trades if t["pnl"] > 0]
         losses = [t for t in trades if t["pnl"] <= 0]
         total_pnl = sum(t["pnl"] for t in trades)
+        total_fees = sum(t["fees"] for t in trades)
         total_wagered = sum(t["wager"] for t in trades)
         avg_win = sum(t["pnl"] for t in wins) / len(wins) if wins else 0
         avg_loss = sum(t["pnl"] for t in losses) / len(losses) if losses else 0
@@ -210,6 +228,7 @@ class RiskManager:
             "losses": len(losses),
             "win_rate": len(wins) / len(trades) if trades else 0,
             "total_pnl": total_pnl,
+            "total_fees": total_fees,
             "total_wagered": total_wagered,
             "avg_wager": total_wagered / len(trades),
             "avg_win": avg_win,

@@ -156,7 +156,16 @@ def run():
         print(f"\n  Processing {len(all_signals)} signal(s)...")
 
         for sig in sorted(all_signals, key=lambda x: x["confidence"], reverse=True):
-            if sig["direction"] in ("long", "short"):
+            if sig["direction"] == "exit":
+                # Close any open position for this symbol
+                for pos in list(rm.open_positions):
+                    if pos.symbol == sig["symbol"] and not pos.closed:
+                        from src.data.fetcher import fetch_ohlcv
+                        rm.close_position(pos, sig["entry"], now, "signal_exit")
+                        print(f"  ✗ CLOSED {pos.symbol} on exit signal @ ${sig['entry']:.2f} | pnl=${pos.pnl:.2f}")
+                        log_trade({**sig, "action": "exit", "pnl": pos.pnl})
+
+            elif sig["direction"] in ("long", "short"):
                 pos = rm.open_position(
                     symbol=sig["symbol"],
                     price=sig["entry"],
@@ -164,14 +173,15 @@ def run():
                     take_profit=sig["target"],
                     side=sig["direction"],
                     date=now,
+                    confidence=sig.get("confidence", 1.0),
                 )
                 if pos:
                     print(f"  ✓ OPENED {sig['direction'].upper()} {sig['symbol']} "
                           f"wager=${pos.wager:.2f} × {pos.size:.6f} units @ ${pos.entry_price:.2f} "
                           f"| stop=${pos.stop_loss:.2f} target=${pos.take_profit:.2f}")
-                    log_trade({**sig, "action": "open", "size": pos.size})
+                    log_trade({**sig, "action": "open", "size": pos.size, "wager": pos.wager})
 
-        # Save updated state
+        # Save updated state — include all Position fields so restore works
         state["capital"] = rm.capital
         state["positions"] = [
             {
@@ -180,8 +190,10 @@ def run():
                 "stop_loss": p.stop_loss,
                 "take_profit": p.take_profit,
                 "size": p.size,
+                "wager": p.wager,          # required — was missing, caused TypeError on reload
                 "side": p.side,
                 "entry_date": p.entry_date,
+                "fees": p.fees,
                 "pnl": p.pnl,
                 "closed": p.closed,
                 "exit_price": p.exit_price,

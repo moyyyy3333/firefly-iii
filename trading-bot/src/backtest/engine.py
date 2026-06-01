@@ -2,7 +2,7 @@
 Event-driven backtester — fixed wager model.
 
 Each trade places a fixed dollar wager (min_wager–max_wager).
-Applies realistic assumptions: 0.1% slippage, 0.1% commission.
+Applies realistic assumptions: 0.1% slippage, commission handled by RiskManager.
 No lookahead bias — signals only see data up to bar i.
 """
 
@@ -22,7 +22,7 @@ from config.settings import (
 )
 
 SLIPPAGE = 0.001      # 0.1% slippage on each fill
-COMMISSION = 0.001    # 0.1% commission per trade
+COMMISSION = 0.001    # 0.1% per fill, passed into RiskManager
 
 
 @dataclass
@@ -43,6 +43,7 @@ class BacktestResult:
     avg_win_pct: float
     avg_loss_pct: float
     avg_wager: float
+    total_fees: float
     roi_on_wagered: float
     final_capital: float
     equity_curve: pd.Series
@@ -58,8 +59,9 @@ class BacktestResult:
         print(f"  Avg Win:          ${self.avg_win:.2f}  ({self.avg_win_pct:.1f}% on wager)")
         print(f"  Avg Loss:         ${self.avg_loss:.2f}  ({self.avg_loss_pct:.1f}% on wager)")
         print(f"  Profit Factor:    {self.profit_factor:.2f}x")
+        print(f"  Total Fees:       ${self.total_fees:.2f}")
         print(f"  ROI on wagered:   {self.roi_on_wagered:.1f}%")
-        print(f"  Total P&L:        ${self.total_pnl:,.2f}")
+        print(f"  Total P&L (net):  ${self.total_pnl:,.2f}")
         print(f"  Total Return:     {self.total_return_pct:.1f}%")
         print(f"  Max Drawdown:     {self.max_drawdown_pct:.1f}%")
         print(f"  Sharpe Ratio:     {self.sharpe_ratio:.2f}")
@@ -92,6 +94,7 @@ class BacktestEngine:
             min_wager=self.min_wager,
             max_wager=self.max_wager,
             max_open_positions=MAX_OPEN_POSITIONS,
+            commission=self.commission,
         )
 
         equity_curve = []
@@ -118,14 +121,20 @@ class BacktestEngine:
 
                 if slice_signals:
                     latest_sig = slice_signals[-1]
-                    if latest_sig.direction in ("long", "short") and rm.can_open():
+
+                    if latest_sig.direction == "exit":
+                        # Close all open positions for this symbol on exit signal
+                        exit_price = bar["close"] * (1 - self.slippage)
+                        for pos in list(rm.open_positions):
+                            if pos.symbol == symbol and not pos.closed:
+                                rm.close_position(pos, exit_price, date_str, "signal_exit")
+
+                    elif latest_sig.direction in ("long", "short") and rm.can_open():
                         entry_with_slip = latest_sig.entry_price * (
                             1 + self.slippage if latest_sig.direction == "long"
                             else 1 - self.slippage
                         )
-                        # Commission charged on wager size
-                        commission_cost = self._wager_for(latest_sig.confidence) * self.commission
-                        rm.capital -= commission_cost
+                        # Commission is handled inside open_position; no double-deduction
                         rm.open_position(
                             symbol=symbol,
                             price=entry_with_slip,
@@ -136,7 +145,7 @@ class BacktestEngine:
                             confidence=latest_sig.confidence,
                         )
 
-            # Mark-to-market equity: free cash + unrealised P&L on open positions
+            # Mark-to-market equity: free cash + deployed wagers + unrealised P&L
             unrealised = sum(
                 (bar["close"] - p.entry_price) * p.size if p.side == "long"
                 else (p.entry_price - bar["close"]) * p.size
@@ -170,14 +179,12 @@ class BacktestEngine:
             avg_win_pct=s.get("avg_win_pct", 0),
             avg_loss_pct=s.get("avg_loss_pct", 0),
             avg_wager=s.get("avg_wager", 0),
+            total_fees=s.get("total_fees", 0),
             roi_on_wagered=s.get("roi_on_wagered", 0),
             final_capital=s.get("final_capital", self.starting_capital),
             equity_curve=equity_series,
             trade_log=rm.trade_log,
         )
-
-    def _wager_for(self, confidence: float) -> float:
-        return self.min_wager + (self.max_wager - self.min_wager) * confidence
 
     def _max_drawdown(self, equity: pd.Series) -> float:
         peak = equity.cummax()

@@ -1,5 +1,8 @@
 name: 'Code - Dependency review'
-on: [ pull_request ]
+on:
+  pull_request:
+    paths-ignore:
+      - 'trading-bot/**'
 
 permissions:
   contents: read
@@ -14,7 +17,5 @@ jobs:
           fetch-depth: 0
       - name: 'Dependency review'
         uses: actions/dependency-review-action@v4
-        continue-on-error: true
         with:
           fail-on-severity: critical
-          comment-summary-in-pr: always
