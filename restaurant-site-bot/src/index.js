@@ -1,6 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { config, assertConfig } from './config.js';
 import { runPipeline } from './pipeline.js';
+import { registerPreview } from './previews.js';
 
 /**
  * The Telegram trigger. Send the bot a message like:
@@ -44,8 +45,9 @@ bot.onText(/^run\s+(.+)/i, async (msg, match) => {
     await runPipeline({
       query,
       onProgress,
-      // Wire your real host here (e.g. push out/<slug> to S3/Netlify/Vercel and return the URL).
-      publishUrl: async (slug) => `https://preview.yourstudio.com/${slug}/`,
+      // Expiring, watermarked preview link (run the preview server: `npm run serve`).
+      publishUrl: async (slug, biz) =>
+        registerPreview(slug, { business: biz.name, recipient: biz.email || '' }),
     });
   } catch (err) {
     onProgress(`Pipeline error: ${err.message}`);

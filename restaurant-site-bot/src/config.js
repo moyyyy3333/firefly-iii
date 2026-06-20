@@ -32,6 +32,12 @@ export const config = {
     postalAddress: process.env.SENDER_POSTAL_ADDRESS || '',
     unsubscribeEmail: process.env.UNSUBSCRIBE_EMAIL || '',
   },
+  previews: {
+    baseUrl: process.env.PREVIEW_BASE_URL || 'http://localhost:8080',
+    port: num(process.env.PREVIEW_PORT, 8080),
+    ttlHours: num(process.env.PREVIEW_TTL_HOURS, 36),
+    studioName: process.env.FROM_NAME || 'Your Studio',
+  },
   maxOutreachPerRun: num(process.env.MAX_OUTREACH_PER_RUN, 25),
   dryRun: bool(process.env.DRY_RUN, true),
 };

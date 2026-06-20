@@ -28,7 +28,7 @@ export async function runPipeline({ query, onProgress = () => {}, publishUrl } =
       await onProgress(`${tag}: designing site...`);
       const site = await generateSite(biz);
 
-      const previewUrl = publishUrl ? await publishUrl(site.slug) : `file://${site.file}`;
+      const previewUrl = publishUrl ? await publishUrl(site.slug, biz) : `file://${site.file}`;
 
       await onProgress(`${tag}: creating checkout offer...`);
       const checkoutUrl = await createCheckoutLink(biz, previewUrl);

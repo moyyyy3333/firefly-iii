@@ -1,5 +1,6 @@
 import { assertConfig } from './config.js';
 import { runPipeline } from './pipeline.js';
+import { registerPreview } from './previews.js';
 
 /**
  * CLI entry for testing without Telegram:
@@ -16,5 +17,6 @@ assertConfig(['anthropic', 'places', 'stripe']);
 await runPipeline({
   query,
   onProgress: (text) => console.log(`• ${text}`),
-  publishUrl: async (slug) => `https://preview.yourstudio.com/${slug}/`,
+  publishUrl: async (slug, biz) =>
+    registerPreview(slug, { business: biz.name, recipient: biz.email || '' }),
 });

@@ -25,6 +25,21 @@ myself with AI" objection because *you've already done it for them and will host
 still leaves a strong margin at volume. Treat it as a configurable lever — raise it for higher-touch
 markets, keep it low where you want pure throughput. Change `SITE_PRICE_CENTS` to adjust.
 
+## Expiring, watermarked previews
+
+Each generated site is served through a small preview server (`npm run serve`) instead of a plain
+static host, so the link can expire and carry a watermark:
+
+- **Dies 36h after first open** — the clock starts when the recipient opens it, not when you send it
+  (`PREVIEW_TTL_HOURS`). After that the link returns *410 Gone* with a "reply for a fresh link" note.
+- **Watermarked** — the business name + "Preview by <your studio>" is tiled across the page, so any
+  screenshot is obviously your unfinished, branded work.
+- **Honest limit:** you *cannot* block screenshots or screen recording on the web — no site can. The
+  watermark + light right-click/save deterrents are the realistic version of that ask.
+
+Run `npm run serve` alongside `npm start`, and set `PREVIEW_BASE_URL` to wherever the preview server
+is publicly reachable.
+
 ## What this does NOT do (on purpose)
 
 To keep you on the right side of the law and out of scam territory, this pipeline deliberately
