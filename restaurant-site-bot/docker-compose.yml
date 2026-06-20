@@ -1,0 +1,34 @@
+# Runs the whole thing on a host: the Telegram bot and the preview server,
+# sharing one persistent volume so generated sites + state survive restarts.
+#
+#   cp .env.example .env   # fill in keys; set PREVIEW_BASE_URL to your public URL
+#   docker compose up -d --build
+#
+# Put a TLS-terminating reverse proxy (Caddy, nginx, your host's load balancer)
+# in front of the `preview` service and point PREVIEW_BASE_URL at it.
+
+services:
+  bot:
+    build: .
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - sitedata:/data
+    restart: unless-stopped
+    command: ["node", "src/index.js"]
+
+  preview:
+    build: .
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - sitedata:/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    command: ["node", "src/server.js"]
+
+volumes:
+  sitedata:

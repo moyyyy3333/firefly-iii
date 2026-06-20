@@ -5,7 +5,12 @@ const num = (v, d) => (v === undefined || v === '' ? d : Number(v));
 const bool = (v, d) => (v === undefined || v === '' ? d : String(v).toLowerCase() === 'true');
 const list = (v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : []);
 
+// Where generated sites and state (previews.json, suppression.json) live.
+// Point this at a mounted volume in production so data survives restarts.
+const dataDir = process.env.DATA_DIR || process.cwd();
+
 export const config = {
+  dataDir,
   telegram: {
     token: process.env.TELEGRAM_BOT_TOKEN,
     allowedUserIds: list(process.env.TELEGRAM_ALLOWED_USER_IDS),

@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { config } from './config.js';
 
-const STORE = path.resolve('previews.json');
+const STORE = path.join(config.dataDir, 'previews.json');
 
 function load() {
   try {

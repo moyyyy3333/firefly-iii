@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { config } from './config.js';
 
-const FILE = path.resolve('suppression.json');
+const FILE = path.join(config.dataDir, 'suppression.json');
 
 /**
  * Opt-out / suppression list. CAN-SPAM requires that opt-outs are honored within

@@ -13,7 +13,7 @@ import { openPreview, watermarkHtml } from './previews.js';
  *   blocking is not possible on the web.)
  */
 const app = express();
-const OUT_DIR = path.resolve('out');
+const OUT_DIR = path.join(config.dataDir, 'out');
 
 app.get('/p/:token', (req, res) => {
   const { status, record } = openPreview(req.params.token);

@@ -73,6 +73,26 @@ npm start                                     # start the Telegram bot
 Generated sites are written to `out/<slug>/index.html`. Wire `publishUrl()` in `pipeline.js` /
 `index.js` to push them to your host (S3, Netlify, Vercel, etc.) and return the live preview URL.
 
+## Deploy (host it for real)
+
+Because previews must be *served live* (to expire and watermark), you deploy the **app**, not flat
+files. The bot and the preview server run as two containers sharing one volume:
+
+```bash
+cp .env.example .env          # set keys + PREVIEW_BASE_URL to your public https URL
+docker compose up -d --build
+```
+
+- `bot` generates sites into `/data/out`; `preview` serves them from the same volume.
+- Put a TLS proxy (Caddy/nginx/your host's LB) in front of the `preview` service and set
+  `PREVIEW_BASE_URL` to that public URL so emailed links resolve.
+- Works as-is on anything that runs Docker (a VPS, Fly.io, Render, etc.). `DATA_DIR=/data` keeps
+  generated sites and state (`previews.json`, `suppression.json`) on the mounted volume across
+  restarts.
+
+Static hosts (Netlify/Vercel/S3) are intentionally *not* used here: they'd serve flat files and break
+both the 36h expiry and the watermark.
+
 ## Compliance checklist before going live
 
 - [ ] Set a real `SENDER_POSTAL_ADDRESS` and a monitored `UNSUBSCRIBE_EMAIL`.

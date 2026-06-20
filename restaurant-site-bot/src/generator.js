@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from './config.js';
 import { DESIGNER_SYSTEM_PROMPT, buildSiteUserPrompt } from './designPrompt.js';
 
-const OUT_DIR = path.resolve('out');
+const OUT_DIR = path.join(config.dataDir, 'out');
 
 function slugify(name) {
   return name
