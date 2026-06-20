@@ -1,0 +1,20 @@
+{
+  "name": "restaurant-site-bot",
+  "version": "1.0.0",
+  "description": "Telegram-triggered pipeline that finds restaurants with weak/no web presence, generates an award-quality spec website, and sends a compliant proposal with a Stripe checkout link.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "once": "node src/runOnce.js"
+  },
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemailer": "^6.9.14",
+    "stripe": "^16.12.0"
+  }
+}
