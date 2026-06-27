@@ -2,7 +2,7 @@
 
 ## Repository Layout
 
-This repo contains four distinct projects:
+This repo contains five distinct projects:
 
 | Directory | Name | Stack | Purpose |
 |---|---|---|---|
@@ -10,6 +10,7 @@ This repo contains four distinct projects:
 | `filter-removal-app/` | Unmask (mobile) | React Native / Expo / TensorFlow.js | On-device AI filter removal from photos |
 | `filter-removal-web/` | Unmask (web) | React / Vite | Browser version of Unmask, deployed to GitHub Pages |
 | `neo/` | Neo Security Guard | React Native / Expo | Mobile security monitoring app |
+| `hermes/` | Hermes Bot | Python / python-telegram-bot | Telegram bot (`@neo6morpheus9bot`) for Firefly III |
 
 ## Project-specific notes
 
@@ -38,6 +39,25 @@ This repo contains four distinct projects:
 - `src/services/` — device/network services
 - `src/theme.js` — design tokens
 - Start: `expo start`
+
+### Hermes Bot (`hermes/`)
+- Python Telegram bot; Telegram username: `@neo6morpheus9bot`
+- Connects to Firefly III via its REST API to answer finance queries over Telegram
+- Commands: `/balance`, `/transactions`, `/bills`, `/budgets`, `/help`
+- `bot.py` — entry point (polling mode by default; set `WEBHOOK_URL` in `.env` for webhook mode)
+- `commands.py` — Telegram command handlers
+- `firefly_client.py` — Firefly III API client
+- `config.py` — reads configuration from `.env`
+- Setup: `cp hermes/.env.example hermes/.env`, fill in `TELEGRAM_BOT_TOKEN` and `FIREFLY_API_TOKEN`, then `pip3 install -r hermes/requirements.txt && python3 hermes/bot.py`
+- The bot token for `@neo6morpheus9bot` comes from @BotFather on Telegram
+- `FIREFLY_API_TOKEN` is a personal access token from Firefly III → Profile → OAuth → Personal Access Tokens
+- `TELEGRAM_ALLOWED_CHAT_IDS` (optional) restricts which chat IDs can use the bot
+
+### Firefly III Telegram notification channel
+- Firefly III sends Telegram notifications via a custom channel driver: `app/Notifications/Channels/TelegramChannel.php`
+- Registered in `AppServiceProvider` — no external package needed
+- Requires two encrypted config values in the Firefly III DB: `telegram_bot_token` and `telegram_chat_id` (set via the admin panel)
+- All notification classes already have `toTelegram()` methods and return `['telegram']` from `via()`
 
 ## AI Agent PR Instructions
 
