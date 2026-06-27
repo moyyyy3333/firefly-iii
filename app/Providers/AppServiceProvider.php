@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace FireflyIII\Providers;
 
+use FireflyIII\Notifications\Channels\TelegramChannel;
+use Illuminate\Notifications\ChannelManager;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         // Passport::$clientUuids = false;
+
+        $this->app->make(ChannelManager::class)->extend('telegram', static fn () => new TelegramChannel());
         Response::macro('api', function (array $value) {
             $headers = ['Cache-Control' => 'no-store'];
             $uuid    = (string) request()->header('X-Trace-Id');
