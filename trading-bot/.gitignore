@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+charts/
+paper_positions.json
+trades.json
+bot.log
+dist/
+build/
+*.egg-info/
+.DS_Store
