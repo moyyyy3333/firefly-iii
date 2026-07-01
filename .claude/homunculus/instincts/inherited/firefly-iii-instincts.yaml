@@ -1,0 +1,338 @@
+# Instincts generated from https://github.com/moyyyy3333/firefly-iii
+# Generated: 2026-05-02T07:02:41.397Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: firefly-iii-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, fix
+
+## Evidence
+
+- 2 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat: Add NEO security guard mobile app (Expo/React Native), fix: Add full iOS support to NEO app config
+
+---
+id: firefly-iii-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Commit Length
+
+## Action
+
+Write moderate-length commit messages (~51 characters)
+
+## Evidence
+
+- Average commit message length: 51 chars
+- Based on 2 commits
+
+---
+id: firefly-iii-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: firefly-iii-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: firefly-iii-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: firefly-iii-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: firefly-iii-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: firefly-iii-instinct-file-naming-camelCase
+trigger: "When creating a new JavaScript file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct File Naming CamelCase
+
+## Action
+
+Name the file using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.files: camelCase
+
+---
+id: firefly-iii-instinct-function-naming-camelCase
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Function Naming CamelCase
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: firefly-iii-instinct-class-naming-pascalCase
+trigger: "When creating a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Class Naming PascalCase
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: firefly-iii-instinct-constant-naming-screaming-snake-case
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Constant Naming Screaming Snake Case
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: firefly-iii-instinct-import-style-relative
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Import Style Relative
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in importStyle: relative
+
+---
+id: firefly-iii-instinct-export-style-mixed
+trigger: "When exporting modules or functions"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Export Style Mixed
+
+## Action
+
+Use both named and default exports as appropriate
+
+## Evidence
+
+- Pattern in exportStyle: mixed
+
+---
+id: firefly-iii-instinct-commit-conventional-prefix
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Commit Conventional Prefix
+
+## Action
+
+Start the message with a conventional prefix such as 'feat' or 'fix'
+
+## Evidence
+
+- Seen in commit: 'feat: Add NEO security guard mobile app (Expo/React Native)'
+- Seen in commit: 'fix: Add full iOS support to NEO app config'
+
+---
+id: firefly-iii-instinct-commit-length-50-chars
+trigger: "When composing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Commit Length 50 Chars
+
+## Action
+
+Keep the commit message around 50 characters in length
+
+## Evidence
+
+- Pattern in commits.averageLength: 51
+
+---
+id: firefly-iii-instinct-test-location-separate
+trigger: "When adding new tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Test Location Separate
+
+## Action
+
+Place test files in a separate directory from source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
+---
+id: firefly-iii-instinct-module-organization-type-based
+trigger: "When organizing new modules"
+confidence: 0.7
+domain: architecture
+source: repo-analysis
+source_repo: moyyyy3333/firefly-iii
+---
+
+# Firefly Iii Instinct Module Organization Type Based
+
+## Action
+
+Group modules by type (e.g., components, utils, services)
+
+## Evidence
+
+- Pattern in architecture.moduleOrganization: type-based
+
