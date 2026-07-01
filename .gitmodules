@@ -1,0 +1,6 @@
+[submodule "neurolink"]
+	path = neurolink
+	url = https://github.com/moyyyy3333/neurolink.git
+[submodule "kimi"]
+	path = kimi
+	url = https://github.com/moyyyy3333/Kimi-.git
